@@ -1,20 +1,22 @@
 package com.qhdp.service.impl;
 
-import com.qhdp.entity.Shop;
-import com.qhdp.mapper.ShopMapper;
-import com.qhdp.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qhdp.entity.Shop;
+import com.qhdp.service.ShopService;
+import com.qhdp.mapper.ShopMapper;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+* @author phoenix
+* @description 针对表【tb_shop】的数据库操作Service实现
+* @createDate 2026-03-11 14:32:16
+*/
 @Service
-public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
+public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop>
+    implements ShopService{
 
 }
+
+
+
+

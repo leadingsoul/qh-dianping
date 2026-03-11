@@ -1,51 +1,22 @@
 package com.qhdp.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.qhdp.dto.Result;
 import com.qhdp.entity.Voucher;
+import com.qhdp.service.VoucherService;
 import com.qhdp.mapper.VoucherMapper;
-import com.qhdp.entity.SeckillVoucher;
-import com.qhdp.service.ISeckillVoucherService;
-import com.qhdp.service.IVoucherService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.Resource;
-import java.util.List;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+* @author phoenix
+* @description 针对表【tb_voucher】的数据库操作Service实现
+* @createDate 2026-03-11 14:33:43
+*/
 @Service
-public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> implements IVoucherService {
+public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher>
+    implements VoucherService{
 
-    @Resource
-    private ISeckillVoucherService seckillVoucherService;
-
-    @Override
-    public Result queryVoucherOfShop(Long shopId) {
-        // 查询优惠券信息
-        List<Voucher> vouchers = getBaseMapper().queryVoucherOfShop(shopId);
-        // 返回结果
-        return Result.ok(vouchers);
-    }
-
-    @Override
-    @Transactional
-    public void addSeckillVoucher(Voucher voucher) {
-        // 保存优惠券
-        save(voucher);
-        // 保存秒杀信息
-        SeckillVoucher seckillVoucher = new SeckillVoucher();
-        seckillVoucher.setVoucherId(voucher.getId());
-        seckillVoucher.setStock(voucher.getStock());
-        seckillVoucher.setBeginTime(voucher.getBeginTime());
-        seckillVoucher.setEndTime(voucher.getEndTime());
-        seckillVoucherService.save(seckillVoucher);
-    }
 }
+
+
+
+

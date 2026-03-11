@@ -4,13 +4,15 @@ import com.qhdp.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+* @author phoenix
+* @description 针对表【tb_user】的数据库操作Mapper
+* @createDate 2026-03-11 14:33:10
+* @Entity com.qhdp.entity.User
+*/
 public interface UserMapper extends BaseMapper<User> {
 
 }
+
+
+
+

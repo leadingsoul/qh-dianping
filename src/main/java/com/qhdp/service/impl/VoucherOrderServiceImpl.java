@@ -1,20 +1,22 @@
 package com.qhdp.service.impl;
 
-import com.qhdp.entity.VoucherOrder;
-import com.qhdp.mapper.VoucherOrderMapper;
-import com.qhdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qhdp.entity.VoucherOrder;
+import com.qhdp.service.VoucherOrderService;
+import com.qhdp.mapper.VoucherOrderMapper;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+* @author phoenix
+* @description 针对表【tb_voucher_order】的数据库操作Service实现
+* @createDate 2026-03-11 14:33:53
+*/
 @Service
-public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder>
+    implements VoucherOrderService{
 
 }
+
+
+
+

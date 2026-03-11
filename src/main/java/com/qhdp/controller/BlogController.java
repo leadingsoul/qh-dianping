@@ -6,8 +6,8 @@ import com.qhdp.dto.Result;
 import com.qhdp.dto.UserDTO;
 import com.qhdp.entity.Blog;
 import com.qhdp.entity.User;
-import com.qhdp.service.IBlogService;
-import com.qhdp.service.IUserService;
+import com.qhdp.service.BlogService;
+import com.qhdp.service.UserService;
 import com.qhdp.utils.SystemConstants;
 import com.qhdp.utils.UserHolder;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +26,8 @@ import java.util.List;
 @RequestMapping("/blog")
 public class BlogController {
 
-    private final IBlogService blogService;
-    private final IUserService userService;
+    private final BlogService blogService;
+    private final UserService userService;
 
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {

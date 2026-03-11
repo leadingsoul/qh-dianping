@@ -1,20 +1,22 @@
 package com.qhdp.service.impl;
 
-import com.qhdp.entity.Blog;
-import com.qhdp.mapper.BlogMapper;
-import com.qhdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qhdp.entity.Blog;
+import com.qhdp.service.BlogService;
+import com.qhdp.mapper.BlogMapper;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+* @author phoenix
+* @description 针对表【tb_blog】的数据库操作Service实现
+* @createDate 2026-03-11 14:29:34
+*/
 @Service
-public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IBlogService {
+public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
+    implements BlogService{
 
 }
+
+
+
+

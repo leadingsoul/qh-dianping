@@ -4,13 +4,15 @@ import com.qhdp.entity.SeckillVoucher;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
- * <p>
- * 秒杀优惠券表，与优惠券是一对一关系 Mapper 接口
- * </p>
- *
- * @author 虎哥
- * @since 2022-01-04
- */
+* @author phoenix
+* @description 针对表【tb_seckill_voucher(秒杀优惠券表，与优惠券是一对一关系)】的数据库操作Mapper
+* @createDate 2026-03-11 14:32:01
+* @Entity com.qhdp.entity.SeckillVoucher
+*/
 public interface SeckillVoucherMapper extends BaseMapper<SeckillVoucher> {
 
 }
+
+
+
+

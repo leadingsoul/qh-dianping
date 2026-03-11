@@ -1,20 +1,18 @@
 package com.qhdp.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.qhdp.entity.Voucher;
-import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
+* @author phoenix
+* @description 针对表【tb_voucher】的数据库操作Mapper
+* @createDate 2026-03-11 14:33:43
+* @Entity com.qhdp.entity.Voucher
+*/
 public interface VoucherMapper extends BaseMapper<Voucher> {
 
-    List<Voucher> queryVoucherOfShop(@Param("shopId") Long shopId);
 }
+
+
+
+

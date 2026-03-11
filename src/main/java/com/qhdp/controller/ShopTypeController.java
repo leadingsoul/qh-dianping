@@ -3,7 +3,6 @@ package com.qhdp.controller;
 
 import com.qhdp.dto.Result;
 import com.qhdp.entity.ShopType;
-import com.qhdp.service.IShopTypeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +21,7 @@ import java.util.List;
 @RequestMapping("/shop-type")
 public class ShopTypeController {
 
-    private final IShopTypeService typeService;
+    private final ShopTypeService typeService;
 
     @GetMapping("list")
     public Result queryTypeList() {

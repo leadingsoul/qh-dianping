@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhdp.mapper.RollbackFailureLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.qhdp.entity.RollbackFailureLog">
+            <id property="id" column="id" />
+            <result property="voucherId" column="voucher_id" />
+            <result property="userId" column="user_id" />
+            <result property="orderId" column="order_id" />
+            <result property="traceId" column="trace_id" />
+            <result property="detail" column="detail" />
+            <result property="resultCode" column="result_code" />
+            <result property="retryAttempts" column="retry_attempts" />
+            <result property="source" column="source" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,voucher_id,user_id,order_id,trace_id,detail,
+        result_code,retry_attempts,source,create_time,update_time
+    </sql>
+</mapper>

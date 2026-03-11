@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qhdp.dto.Result;
 import com.qhdp.entity.Shop;
-import com.qhdp.service.IShopService;
 import com.qhdp.utils.SystemConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/shop")
 public class ShopController {
 
-    public final IShopService shopService;
+    public final ShopService shopService;
 
     /**
      * 根据id查询商铺信息

@@ -3,7 +3,6 @@ package com.qhdp.controller;
 
 import com.qhdp.dto.Result;
 import com.qhdp.entity.Voucher;
-import com.qhdp.service.IVoucherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/voucher")
 public class VoucherController {
 
-    private final IVoucherService voucherService;
+    private final VoucherService voucherService;
 
     /**
      * 新增普通券
