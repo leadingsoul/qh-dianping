@@ -1,9 +1,12 @@
 package com.qhdp.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -12,12 +15,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_voucher")
 @Data
-public class Voucher {
-    /**
-     * 主键
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Voucher extends BaseEntity{
 
     /**
      * 商铺id
@@ -62,17 +60,32 @@ public class Voucher {
     /**
      * 逻辑删除 0未删除 1已删除
      */
+    @TableLogic
+    @JsonIgnore
     private Integer deleted;
 
     /**
-     * 创建时间
+     * 库存
      */
-    private Date createTime;
+    @Version
+    @TableField(exist = false)
+    private Integer stock;
 
     /**
-     * 更新时间
+     * 生效时间
      */
-    private Date updateTime;
+    @TableField(exist = false)
+    @Schema(description = "生效时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date beginTime;
+
+    /**
+     * 失效时间
+     */
+    @TableField(exist = false)
+    @Schema(description = "失效时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date endTime;
 
     @Override
     public boolean equals(Object that) {
@@ -97,7 +110,10 @@ public class Voucher {
             && (this.getStatus() == null ? other.getStatus() == null : this.getStatus().equals(other.getStatus()))
             && (this.getDeleted() == null ? other.getDeleted() == null : this.getDeleted().equals(other.getDeleted()))
             && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
-            && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()));
+            && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()))
+            && (this.getStock() == null ? other.getStock() == null : this.getStock().equals(other.getStock()))
+            && (this.getBeginTime() == null ? other.getBeginTime() == null : this.getBeginTime().equals(other.getBeginTime()))
+            && (this.getEndTime() == null ? other.getEndTime() == null : this.getEndTime().equals(other.getEndTime()));
     }
 
     @Override
@@ -116,6 +132,9 @@ public class Voucher {
         result = prime * result + ((getDeleted() == null) ? 0 : getDeleted().hashCode());
         result = prime * result + ((getCreateTime() == null) ? 0 : getCreateTime().hashCode());
         result = prime * result + ((getUpdateTime() == null) ? 0 : getUpdateTime().hashCode());
+        result = prime * result + ((getStock() == null) ? 0 : getStock().hashCode());
+        result = prime * result + ((getBeginTime() == null) ? 0 : getBeginTime().hashCode());
+        result = prime * result + ((getEndTime() == null) ? 0 : getEndTime().hashCode());
         return result;
     }
 
@@ -125,7 +144,6 @@ public class Voucher {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", shopId=").append(shopId);
         sb.append(", title=").append(title);
         sb.append(", subTitle=").append(subTitle);
@@ -135,8 +153,9 @@ public class Voucher {
         sb.append(", type=").append(type);
         sb.append(", status=").append(status);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
+        sb.append(", stock=").append(stock);
+        sb.append(", beginTime=").append(beginTime);
+        sb.append(", endTime=").append(endTime);
         sb.append("]");
         return sb.toString();
     }

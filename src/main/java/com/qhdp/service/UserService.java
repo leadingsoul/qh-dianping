@@ -3,6 +3,7 @@ package com.qhdp.service;
 import com.qhdp.dto.LoginFormDTO;
 import com.qhdp.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -25,8 +26,9 @@ public interface UserService extends IService<User> {
      * 用户登录方法
      * @param loginForm 登录表单数据传输对象，包含用户名、密码等登录信息
      * @param session HTTP会话对象，用于保存用户登录状态等信息
+     * @return 返回登录成功后的token，用于后续请求验证用户身份
      */
-    void login(LoginFormDTO loginForm, HttpSession session);
+    String login(LoginFormDTO loginForm, HttpSession session);
 
-    void logout();
+    void logout(HttpServletRequest request);
 }

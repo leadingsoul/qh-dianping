@@ -1,8 +1,11 @@
 package com.qhdp.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -11,12 +14,8 @@ import lombok.Data;
  */
 @TableName(value ="tb_user_phone")
 @Data
-public class UserPhone {
-    /**
-     * 主键
-     */
-    @TableId
-    private Long id;
+public class UserPhone extends BaseEntity{
+
 
     /**
      * 用户id
@@ -31,17 +30,11 @@ public class UserPhone {
     /**
      * 逻辑删除 0未删除 1已删除
      */
+    @JsonIgnore
+    @TableLogic
     private Integer deleted;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
 
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -82,12 +75,9 @@ public class UserPhone {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", userId=").append(userId);
         sb.append(", phone=").append(phone);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

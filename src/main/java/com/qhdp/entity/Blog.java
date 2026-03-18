@@ -1,10 +1,10 @@
 package com.qhdp.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.*;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -13,12 +13,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_blog")
 @Data
-public class Blog {
-    /**
-     * 主键
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Blog extends BaseEntity{
 
     /**
      * 商户id
@@ -48,7 +43,21 @@ public class Blog {
     /**
      * 点赞数量
      */
+    @Version
     private Integer liked;
+
+    @TableField(exist = false)
+    private String icon;
+    /**
+     * 用户姓名
+     */
+    @TableField(exist = false)
+    private String name;
+    /**
+     * 是否点赞过了
+     */
+    @TableField(exist = false)
+    private Boolean isLike;
 
     /**
      * 评论数量
@@ -58,17 +67,10 @@ public class Blog {
     /**
      * 逻辑删除 0未删除 1已删除
      */
+    @TableLogic
+    @JsonIgnore
     private Integer deleted;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -92,7 +94,10 @@ public class Blog {
             && (this.getComments() == null ? other.getComments() == null : this.getComments().equals(other.getComments()))
             && (this.getDeleted() == null ? other.getDeleted() == null : this.getDeleted().equals(other.getDeleted()))
             && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
-            && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()));
+            && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()))
+            && (this.getIcon() == null ? other.getIcon() == null : this.getIcon().equals(other.getIcon()))
+            && (this.getName() == null ? other.getName() == null : this.getName().equals(other.getName()))
+            && (this.getIsLike() == null ? other.getIsLike() == null : this.getIsLike().equals(other.getIsLike()));
     }
 
     @Override
@@ -110,6 +115,9 @@ public class Blog {
         result = prime * result + ((getDeleted() == null) ? 0 : getDeleted().hashCode());
         result = prime * result + ((getCreateTime() == null) ? 0 : getCreateTime().hashCode());
         result = prime * result + ((getUpdateTime() == null) ? 0 : getUpdateTime().hashCode());
+        result = prime * result + ((getIcon() == null) ? 0 : getIcon().hashCode());
+        result = prime * result + ((getName() == null) ? 0 : getName().hashCode());
+        result = prime * result + ((getIsLike() == null) ? 0 : getIsLike().hashCode());
         return result;
     }
 
@@ -119,7 +127,6 @@ public class Blog {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", shopId=").append(shopId);
         sb.append(", userId=").append(userId);
         sb.append(", title=").append(title);
@@ -128,8 +135,9 @@ public class Blog {
         sb.append(", liked=").append(liked);
         sb.append(", comments=").append(comments);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
+        sb.append(", icon=").append(icon);
+        sb.append(", name=").append(name);
+        sb.append(", isLike=").append(isLike);
         sb.append("]");
         return sb.toString();
     }

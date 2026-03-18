@@ -3,6 +3,8 @@ package com.qhdp.service;
 import com.qhdp.entity.Blog;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
 * @author phoenix
 * @description 针对表【tb_blog】的数据库操作Service
@@ -10,4 +12,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface BlogService extends IService<Blog> {
 
+    void saveBlog(Blog blog);
+
+    void increaseLike(Long id);
+
+    List<Blog> queryMyBlog(Integer current);
+
+    List<Blog> queryHotBlog(Integer current);
 }

@@ -1,10 +1,10 @@
 package com.qhdp.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -13,12 +13,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_user_info")
 @Data
-public class UserInfo {
-    /**
-     * 主键
-     */
-    @TableId
-    private Long id;
+public class UserInfo extends BaseEntity{
 
     /**
      * 主键，用户id
@@ -68,17 +63,10 @@ public class UserInfo {
     /**
      * '逻辑删除 0未删除 1已删除'
      */
+    @TableLogic
+    @JsonIgnore
     private Integer deleted;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -133,7 +121,6 @@ public class UserInfo {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", userId=").append(userId);
         sb.append(", city=").append(city);
         sb.append(", introduce=").append(introduce);
@@ -144,8 +131,6 @@ public class UserInfo {
         sb.append(", credits=").append(credits);
         sb.append(", level=").append(level);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

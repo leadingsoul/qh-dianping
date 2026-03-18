@@ -11,12 +11,8 @@ import lombok.Data;
  */
 @TableName(value ="tb_rollback_failure_log")
 @Data
-public class RollbackFailureLog {
-    /**
-     * 主键
-     */
-    @TableId
-    private Long id;
+public class RollbackFailureLog extends BaseEntity {
+
 
     /**
      * 优惠券id
@@ -58,15 +54,6 @@ public class RollbackFailureLog {
      */
     private String source;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -117,7 +104,6 @@ public class RollbackFailureLog {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", voucherId=").append(voucherId);
         sb.append(", userId=").append(userId);
         sb.append(", orderId=").append(orderId);
@@ -126,8 +112,6 @@ public class RollbackFailureLog {
         sb.append(", resultCode=").append(resultCode);
         sb.append(", retryAttempts=").append(retryAttempts);
         sb.append(", source=").append(source);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

@@ -1,7 +1,10 @@
 package com.qhdp.service;
 
+import com.qhdp.dto.Result;
 import com.qhdp.entity.Voucher;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
 * @author phoenix
@@ -10,4 +13,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface VoucherService extends IService<Voucher> {
 
+
+
+    void addSeckillVoucher(Voucher voucher);
+
+    List<Voucher> queryVoucherOfShop(Long shopId);
+
+    void saveVoucher(Voucher voucher);
 }

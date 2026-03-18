@@ -10,12 +10,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_voucher_order_router")
 @Data
-public class VoucherOrderRouter {
-    /**
-     * 主键
-     */
-    @TableId
-    private Long id;
+public class VoucherOrderRouter extends BaseEntity {
 
     /**
      * 订单id
@@ -32,15 +27,6 @@ public class VoucherOrderRouter {
      */
     private Long voucherId;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -81,12 +67,9 @@ public class VoucherOrderRouter {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", orderId=").append(orderId);
         sb.append(", userId=").append(userId);
         sb.append(", voucherId=").append(voucherId);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

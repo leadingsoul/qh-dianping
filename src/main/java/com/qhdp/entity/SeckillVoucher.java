@@ -1,8 +1,12 @@
 package com.qhdp.entity;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -11,12 +15,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_seckill_voucher")
 @Data
-public class SeckillVoucher {
-    /**
-     * 
-     */
-    @TableId
-    private Long id;
+public class SeckillVoucher extends BaseEntity{
 
     /**
      * 关联的优惠券的id
@@ -26,32 +25,30 @@ public class SeckillVoucher {
     /**
      * 库存
      */
+    @Version
     private Integer stock;
 
     /**
      * 逻辑删除 0未删除 1已删除
      */
+    @TableLogic
+    @JsonIgnore
     private Integer deleted;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
 
     /**
      * 生效时间
      */
+    @Schema(description = "生效时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date beginTime;
 
     /**
      * 失效时间
      */
+    @Schema(description = "失效时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date endTime;
 
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -96,14 +93,11 @@ public class SeckillVoucher {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", voucherId=").append(voucherId);
         sb.append(", stock=").append(stock);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
         sb.append(", beginTime=").append(beginTime);
         sb.append(", endTime=").append(endTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

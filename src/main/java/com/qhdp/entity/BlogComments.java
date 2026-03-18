@@ -1,9 +1,10 @@
 package com.qhdp.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -12,12 +13,8 @@ import lombok.Data;
  */
 @TableName(value ="tb_blog_comments")
 @Data
-public class BlogComments {
-    /**
-     * 主键
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class BlogComments extends BaseEntity{
+
 
     /**
      * 用户id
@@ -47,6 +44,7 @@ public class BlogComments {
     /**
      * 点赞数
      */
+    @Version
     private Integer liked;
 
     /**
@@ -57,17 +55,10 @@ public class BlogComments {
     /**
      * 逻辑删除 0未删除 1已删除
      */
+    @TableLogic
+    @JsonIgnore
     private Integer deleted;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -118,7 +109,6 @@ public class BlogComments {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", userId=").append(userId);
         sb.append(", blogId=").append(blogId);
         sb.append(", parentId=").append(parentId);
@@ -127,8 +117,6 @@ public class BlogComments {
         sb.append(", liked=").append(liked);
         sb.append(", status=").append(status);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

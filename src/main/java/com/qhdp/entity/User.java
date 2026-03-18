@@ -2,8 +2,11 @@ package com.qhdp.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -12,12 +15,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_user")
 @Data
-public class User {
-    /**
-     * 主键
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class User extends BaseEntity{
 
     /**
      * 手机号码
@@ -42,17 +40,10 @@ public class User {
     /**
      * 逻辑删除 0未删除 1已删除
      */
+    @TableLogic
+    @JsonIgnore
     private Integer deleted;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -97,14 +88,11 @@ public class User {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", phone=").append(phone);
         sb.append(", password=").append(password);
         sb.append(", nickName=").append(nickName);
         sb.append(", icon=").append(icon);
         sb.append(", deleted=").append(deleted);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

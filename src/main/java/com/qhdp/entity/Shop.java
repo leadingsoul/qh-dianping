@@ -12,12 +12,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_shop")
 @Data
-public class Shop {
-    /**
-     * 主键
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Shop extends BaseEntity{
 
     /**
      * 商铺名称
@@ -79,15 +74,6 @@ public class Shop {
      */
     private String openHours;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -146,7 +132,6 @@ public class Shop {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", name=").append(name);
         sb.append(", typeId=").append(typeId);
         sb.append(", images=").append(images);
@@ -159,8 +144,6 @@ public class Shop {
         sb.append(", comments=").append(comments);
         sb.append(", score=").append(score);
         sb.append(", openHours=").append(openHours);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

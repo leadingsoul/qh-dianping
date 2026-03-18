@@ -1,8 +1,13 @@
 package com.qhdp.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -11,12 +16,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_voucher_order")
 @Data
-public class VoucherOrder {
-    /**
-     * 主键
-     */
-    @TableId
-    private Long id;
+public class VoucherOrder extends BaseEntity{
 
     /**
      * 下单的用户id
@@ -38,14 +38,12 @@ public class VoucherOrder {
      */
     private Integer status;
 
-    /**
-     * 下单时间
-     */
-    private Date createTime;
 
     /**
      * 支付时间
      */
+    @Schema(description = "支付时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date payTime;
 
     /**
@@ -56,12 +54,10 @@ public class VoucherOrder {
     /**
      * 退款时间
      */
+    @Schema(description = "退款时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date refundTime;
 
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 
     @Override
     public boolean equals(Object that) {
@@ -110,16 +106,13 @@ public class VoucherOrder {
         sb.append(getClass().getSimpleName());
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
         sb.append(", userId=").append(userId);
         sb.append(", voucherId=").append(voucherId);
         sb.append(", payType=").append(payType);
         sb.append(", status=").append(status);
-        sb.append(", createTime=").append(createTime);
         sb.append(", payTime=").append(payTime);
         sb.append(", useTime=").append(useTime);
         sb.append(", refundTime=").append(refundTime);
-        sb.append(", updateTime=").append(updateTime);
         sb.append("]");
         return sb.toString();
     }

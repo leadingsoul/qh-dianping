@@ -3,11 +3,14 @@ package com.qhdp.controller;
 
 import com.qhdp.dto.LoginFormDTO;
 import com.qhdp.dto.Result;
+import com.qhdp.dto.UserDTO;
 import com.qhdp.entity.User;
 import com.qhdp.entity.UserInfo;
 import com.qhdp.service.UserInfoService;
 import com.qhdp.service.UserService;
 import com.qhdp.utils.RegexUtils;
+import com.qhdp.utils.UserHolder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +39,10 @@ public class UserController {
     @PostMapping("code")
     public Result<Void> sendCode(@RequestParam("phone") String phone, HttpSession session) {
         String code = userService.sendCode(phone,session);
-        return Result.success("成功向手机号:"+phone+"发送验证码："+code);
+        if (code == null) {
+            return Result.error("发送验证码失败");
+        }
+        return Result.success("成功向手机号:"+phone+"发送验证码");
     }
 
     /**
@@ -44,9 +50,10 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result<Void> login(@RequestBody LoginFormDTO loginForm, HttpSession session){
-        userService.login(loginForm,session);
-        return Result.success("登录成功");
+    public Result<String> login(@RequestBody LoginFormDTO loginForm, HttpSession session){
+        String token = userService.login(loginForm,session);
+        log.info("登录成功，生成token：{}", token);
+        return Result.success(token,"登录成功");
     }
 
     /**
@@ -54,14 +61,14 @@ public class UserController {
      * @return 无
      */
     @PostMapping("/logout")
-    public Result<Void> logout(){
-        userService.logout();
+    public Result<Void> logout(HttpServletRequest request){
+        userService.logout(request);
         return Result.success("登出成功");
     }
 
     @GetMapping("/me")
-    public Result<User> me(HttpSession session){
-        User user = (User) session.getAttribute("user");
+    public Result<UserDTO> me() {
+        UserDTO user = UserHolder.getUser();
         return Result.success(user);
     }
 

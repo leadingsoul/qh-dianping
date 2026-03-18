@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qhdp.dto.Result;
 import com.qhdp.entity.Shop;
+import com.qhdp.service.ShopService;
 import com.qhdp.utils.SystemConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +31,7 @@ public class ShopController {
      */
     @GetMapping("/{id}")
     public Result queryShopById(@PathVariable("id") Long id) {
-        return Result.ok(shopService.getById(id));
+        return Result.success(shopService.getById(id));
     }
 
     /**
@@ -43,7 +44,7 @@ public class ShopController {
         // 写入数据库
         shopService.save(shop);
         // 返回店铺id
-        return Result.ok(shop.getId());
+        return Result.success(shop.getId());
     }
 
     /**
@@ -55,7 +56,7 @@ public class ShopController {
     public Result updateShop(@RequestBody Shop shop) {
         // 写入数据库
         shopService.updateById(shop);
-        return Result.ok();
+        return Result.success(null);
     }
 
     /**
@@ -74,7 +75,7 @@ public class ShopController {
                 .eq("type_id", typeId)
                 .page(new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE));
         // 返回数据
-        return Result.ok(page.getRecords());
+        return Result.success(page.getRecords());
     }
 
     /**
@@ -93,6 +94,6 @@ public class ShopController {
                 .like(StrUtil.isNotBlank(name), "name", name)
                 .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
         // 返回数据
-        return Result.ok(page.getRecords());
+        return Result.success(page.getRecords());
     }
 }

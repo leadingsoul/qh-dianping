@@ -1,10 +1,13 @@
 package com.qhdp.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qhdp.entity.ShopType;
 import com.qhdp.service.ShopTypeService;
 import com.qhdp.mapper.ShopTypeMapper;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
 * @author phoenix
@@ -15,6 +18,11 @@ import org.springframework.stereotype.Service;
 public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType>
     implements ShopTypeService{
 
+    @Override
+    public List<ShopType> queryAllTypeList() {
+        return list(new LambdaQueryWrapper<ShopType>()
+                .orderByAsc(ShopType::getSort));
+    }
 }
 
 
