@@ -13,4 +13,6 @@ import java.util.List;
 public interface ShopTypeService extends IService<ShopType> {
 
     List<ShopType> queryAllTypeList();
+
+    void refreshShopTypeCache();
 }

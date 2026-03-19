@@ -7,14 +7,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.qhdp.utils.RedisConstants.LOGIN_USER_KEY;
-import static com.qhdp.utils.RedisConstants.LOGIN_USER_TTL;
+import static com.qhdp.constant.RedisConstants.LOGIN_USER_KEY;
+import static com.qhdp.constant.RedisConstants.LOGIN_USER_TTL;
 
 @Slf4j
 @RequiredArgsConstructor

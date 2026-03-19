@@ -1,4 +1,4 @@
-package com.qhdp.utils;
+package com.qhdp.constant;
 
 public class RedisConstants {
     public static final String LOGIN_CODE_KEY = "login:code:";
@@ -14,6 +14,9 @@ public class RedisConstants {
 
     public static final String LOCK_SHOP_KEY = "lock:shop:";
     public static final Long LOCK_SHOP_TTL = 10L;
+
+    public static final String LOCK_SHOP_TYPE_LIST_KEY = "lock:shoptype:list:";
+    public static final Long LOCK_SHOP_TYPE_LIST_TTL = 10L;
 
     public static final String SECKILL_STOCK_KEY = "seckill:stock:";
     public static final String BLOG_LIKED_KEY = "blog:liked:";

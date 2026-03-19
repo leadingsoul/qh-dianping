@@ -9,11 +9,10 @@ import lombok.Getter;
  **/
 @Getter
 public enum RedisKeyManage {
-    /**
-     * key信息，关于key中为什么使用{}大括号，在星球中有详细的讲解：<a href="https://articles.zsxq.com/id_7k4qtb2mofst.html">...</a>
-     * */
     USER_INFO_KEY("user:info:%s","用户id","value为UserInfo类型","k"),
-   
+
+    CACHE_SHOP_TYPE_KEY("cache:shoptype:list","商铺类型列表","value为List<ShopType>类型列表","k"),
+
     CACHE_SHOP_KEY("cache:shop:%s","商铺id","value为Shop类型","k"),
  
     CACHE_SHOP_KEY_NULL("cache:shop_null:%s","商铺id","value为这是空值","k"),

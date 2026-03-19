@@ -1,20 +1,23 @@
 package com.qhdp.utils;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.*;
+import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.Type;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
@@ -97,6 +100,58 @@ public class RedisUtils {
         return JSONUtil.toBean(JSONUtil.toJsonStr(obj), clazz);
     }
 
+    /**
+     * 获取集合类型缓存（List / Set）
+     * @param key 缓存键
+     * @param collectionClass 集合类型（List.class / Set.class）
+     * @param elementClass 集合内元素类型
+     * @return 泛型集合
+     */
+    @SuppressWarnings("unchecked")
+    public <T, C extends java.util.Collection<T>> C get(String key, Class<C> collectionClass, Class<T> elementClass) {
+        checkKey(key);
+        Object obj = redisTemplate.opsForValue().get(key);
+        if (ObjectUtil.isNull(obj)) {
+            return null;
+        }
+        // 转 JSON 字符串，再反序列化为指定集合+指定元素类型
+        JSONArray jsonArray = JSONUtil.parseArray(obj);
+        // 2. 转成指定元素类型的 List
+        List<T> list = jsonArray.toList(elementClass);
+        // 3. 根据传入的集合类型（List/Set）返回对应实例
+        if (Set.class.isAssignableFrom(collectionClass)) {
+            return (C) new HashSet<>(list);
+        } else {
+            return (C) list;
+        }
+    }
+
+    /**
+     * 根据指定的键和元素类型获取列表
+     * 这是一个泛型方法，可以返回任意类型的列表
+     *
+     * @param <T> 列表中元素的类型
+     * @param key 用于获取列表的键值
+     * @param elementClass 列表中元素的Class对象
+     * @return 返回指定类型的列表，如果不存在则返回null
+     */
+    @SuppressWarnings("unchecked")
+     public <T> List<T> getList(String key, Class<T> elementClass) {
+            return get(key, List.class, elementClass);
+    }
+    /**
+     * 根据指定的键和元素类型获取列表
+     * 这是一个泛型方法，可以返回任意类型的列表
+     *
+     * @param <T> 列表中元素的类型
+     * @param key 用于获取列表的键值
+     * @param elementClass 列表中元素的Class对象
+     * @return 返回指定类型的集合，如果不存在则返回null
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Set<T> getSet(String key, Class<T> elementClass) {
+        return get(key, Set.class, elementClass);
+    }
     /**
      * 删除缓存
      * @param key 缓存键
@@ -703,5 +758,112 @@ public class RedisUtils {
         return redisTemplate.opsForZSet().remove(key, values);
     }
 
+    /**
+     * 向Redis GEO添加单个经纬度坐标
+     * @param key GEO的key
+     * @param longitude 经度
+     * @param latitude 纬度
+     * @param member 成员名称（如店铺id、用户id）
+     */
+    public void geoAdd(String key, double longitude, double latitude, String member) {
+        checkKey(key);
+        redisTemplate.opsForGeo().add(key, new Point(longitude, latitude), member);
+    }
 
+    /**
+     * 批量添加Redis GEO坐标
+     * @param key GEO的key
+     * @param geoMap key=成员, value=Point(经纬度)
+     */
+    public void geoAdd(String key, RedisGeoCommands.GeoLocation<Object> geoMap) {
+        checkKey(key);
+        redisTemplate.opsForGeo().add(key, geoMap);
+    }
+
+    /**
+     * 获取指定成员的经纬度坐标
+     * @param key GEO的key
+     * @param members 成员列表
+     * @return 坐标列表
+     */
+    public List<Point> geoPosition(String key, String... members) {
+        checkKey(key);
+        return redisTemplate.opsForGeo().position(key, members);
+    }
+
+    /**
+     * 获取两个成员之间的距离
+     * @param key GEO的key
+     * @param member1 成员1
+     * @param member2 成员2
+     * @return 距离（米）
+     */
+    public Distance geoDistance(String key, String member1, String member2) {
+        checkKey(key);
+        return redisTemplate.opsForGeo().distance(key, member1, member2);
+    }
+
+    /**
+     * 【你要的核心方法】
+     * 按坐标+半径搜索附近的成员（带距离）
+     * @param key GEO key
+     * @param x 经度
+     * @param y 纬度
+     * @param radius 半径（米）
+     * @param limit 限制返回条数
+     * @return GeoResults 包含成员+距离+坐标
+     */
+    public GeoResults<RedisGeoCommands.GeoLocation<Object>> geoSearch(
+            String key,
+            double x,
+            double y,
+            double radius,
+            int limit
+    ) {
+        checkKey(key);
+        return redisTemplate.opsForGeo().search(
+                key,
+                GeoReference.fromCoordinate(x, y),
+                new Distance(radius),
+                RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
+                        .includeDistance()
+                        .limit(limit)
+        );
+    }
+
+    /**
+     * 按成员搜索附近的成员
+     * @param key GEO key
+     * @param member 中心成员
+     * @param radius 半径（米）
+     * @param limit 限制返回条数
+     * @return 结果
+     */
+    public GeoResults<RedisGeoCommands.GeoLocation<Object>> geoSearchByMember(
+            String key,
+            String member,
+            double radius,
+            int limit
+    ) {
+        checkKey(key);
+        return redisTemplate.opsForGeo().search(
+                key,
+                GeoReference.fromMember(member),
+                new Distance(radius),
+                RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
+                        .includeDistance()
+                        .limit(limit)
+        );
+    }
+
+    /**
+     * 删除GEO中的指定成员
+     * @param key GEO key
+     * @param members 要删除的成员
+     * @return 删除数量
+     */
+    public Long geoRemove(String key, String... members) {
+        checkKey(key);
+        return redisTemplate.opsForGeo().remove(key, members);
+    }
 }
