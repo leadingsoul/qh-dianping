@@ -7,9 +7,10 @@ import java.util.Objects;
 
 /**
  * @description: redis key包装
- * @author: 阿星不是程序员
+ * @author: phoenix
  **/
 @Getter
+
 public final class RedisKeyBuild {
     /**
      * 实际使用的key
@@ -20,15 +21,18 @@ public final class RedisKeyBuild {
         this.relKey = relKey;
     }
 
+
     /**
-     * 构建真实的key
-     * @param level 占位符的值
-     * */
-    public static String buildSeckillUserLevelKey(Integer level){
-        // 第一步：格式化占位符
-        String formattedKey = String.format(RedisKeyManage.SECKILL_USER_LEVEL_MEMBERS_TAG_KEY.getKey(), level);
-        // 第二步：拼接环境前缀（最关键！）
-        return SpringUtil.getPrefixDistinctionName() + "-" + formattedKey;
+     * 创建Redis键的静态工厂方法
+     * @param redisKeyManage Redis键管理对象，包含键的模板信息
+     * @param args 可变参数，用于格式化Redis键模板中的占位符
+     * @return 返回一个String字符串，包含完整的Redis键
+     */
+    public static String createRedisKey(RedisKeyManage redisKeyManage, Object... args){
+    // 使用String.format方法根据传入的参数格式化Redis键模板
+        String redisRelKey = String.format(redisKeyManage.getKey(),args);
+    // 创建并返回String字符串，拼接前缀和格式化后的键
+        return SpringUtil.getPrefixDistinctionName() + "-" + redisRelKey;
     }
     
     public static String getRedisKey(RedisKeyManage redisKeyManage) {

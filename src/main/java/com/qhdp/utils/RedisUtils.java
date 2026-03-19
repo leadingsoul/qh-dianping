@@ -1,5 +1,7 @@
 package com.qhdp.utils;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,22 @@ public class RedisUtils {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
+    private void checkKey(String key) {
+        if (StrUtil.isBlank(key)) {
+            throw new IllegalArgumentException("Redis key 不能为 null、空字符串或空白字符");
+        }
+    }
+
+    // 批量 key 校验
+    private void checkKeys(Collection<String> keys) {
+        if (keys == null || keys.isEmpty()) {
+            throw new IllegalArgumentException("Redis keys 集合不能为 null 或空");
+        }
+        for (String key : keys) {
+            checkKey(key);
+        }
+    }
+
     /**
      * 设置缓存
      * @param key 缓存键
@@ -37,7 +55,20 @@ public class RedisUtils {
      * @param timeout 过期时间（秒）
      */
     public void set(String key, Object value, long timeout) {
+        checkKey(key);
         redisTemplate.opsForValue().set(key, value, timeout, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 设置Redis中的键值对，并指定过期时间
+     * @param redisKey Redis中的键
+     * @param value 要存储的值
+     * @param cacheTtl 过期时间
+     * @param timeUnit 时间单位
+     */
+    public void set(String redisKey, Object value, Long cacheTtl, TimeUnit timeUnit) {
+        checkKey(redisKey);
+        redisTemplate.opsForValue().set(redisKey, value, cacheTtl, timeUnit);
     }
 
     /**
@@ -46,7 +77,24 @@ public class RedisUtils {
      * @return 缓存值
      */
     public Object get(String key) {
+        checkKey(key);
         return redisTemplate.opsForValue().get(key);
+    }
+
+    /**
+     * 获取缓存
+     * @param key 缓存键
+     * @param clazz 缓存值类型
+     * @return 缓存值
+     */
+    public <T> T get(String key, Class<T> clazz) {
+        checkKey(key);
+        Object obj = redisTemplate.opsForValue().get(key);
+        if (obj == null) {
+            return null;
+        }
+        // JSON 反序列化（如果你的 Redis 存的是 JSON）
+        return JSONUtil.toBean(JSONUtil.toJsonStr(obj), clazz);
     }
 
     /**
@@ -54,6 +102,7 @@ public class RedisUtils {
      * @param key 缓存键
      */
     public void delete(String key) {
+        checkKey(key);
         redisTemplate.delete(key);
     }
 
@@ -62,6 +111,7 @@ public class RedisUtils {
      * @param keys 缓存键集合
      */
     public void delete(Collection<String> keys) {
+        checkKeys(keys);
         redisTemplate.delete(keys);
     }
 
@@ -72,6 +122,7 @@ public class RedisUtils {
      * @return 是否成功
      */
     public Boolean expire(String key, long timeout) {
+        checkKey(key);
         return redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
     }
 
@@ -81,6 +132,7 @@ public class RedisUtils {
      * @return 是否存在
      */
     public Boolean hasKey(String key) {
+        checkKey(key);
         return redisTemplate.hasKey(key);
     }
 
@@ -90,6 +142,7 @@ public class RedisUtils {
      * @return 匹配的key集合
      */
     public Set<String> keys(String pattern) {
+        checkKey(pattern);
         return redisTemplate.keys(pattern);
     }
 
@@ -98,6 +151,7 @@ public class RedisUtils {
      * @param pattern key前缀
      */
     public void deleteByPattern(String pattern) {
+        checkKey(pattern);
         Set<String> keys = redisTemplate.keys(pattern);
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
@@ -111,6 +165,7 @@ public class RedisUtils {
      * @param value Hash值
      */
     public void hSet(String key, String hashKey, Object value) {
+        checkKey(key);
         redisTemplate.opsForHash().put(key, hashKey, value);
     }
 
@@ -121,6 +176,7 @@ public class RedisUtils {
      * @return Hash值
      */
     public Object hGet(String key, String hashKey) {
+        checkKey(key);
         return redisTemplate.opsForHash().get(key, hashKey);
     }
 
@@ -130,6 +186,7 @@ public class RedisUtils {
      * @param map Hash表
      */
     public void hSetAll(String key, Map<String, Object> map) {
+        checkKey(key);
         redisTemplate.opsForHash().putAll(key, map);
     }
 
@@ -139,6 +196,7 @@ public class RedisUtils {
      * @return Hash表
      */
     public Map<Object, Object> hGetAll(String key) {
+        checkKey(key);
         return redisTemplate.opsForHash().entries(key);
     }
 
@@ -148,6 +206,7 @@ public class RedisUtils {
      * @param hashKey Hash键
      */
     public void hDelete(String key, Object... hashKey) {
+        checkKey(key);
         redisTemplate.opsForHash().delete(key, hashKey);
     }
 
@@ -158,6 +217,7 @@ public class RedisUtils {
      * @return 是否存在
      */
     public Boolean hHasKey(String key, String hashKey) {
+        checkKey(key);
         return redisTemplate.opsForHash().hasKey(key, hashKey);
     }
 
@@ -168,6 +228,7 @@ public class RedisUtils {
      * @return 添加成功的数量
      */
     public Long sAdd(String key, Object value) {
+        checkKey(key);
         return redisTemplate.opsForSet().add(key, value);
     }
 
@@ -178,6 +239,7 @@ public class RedisUtils {
      * @return 添加成功的数量
      */
     public Long sAdd(String key, Collection<Object> values) {
+        checkKey(key);
         return redisTemplate.opsForSet().add(key, values.toArray());
     }
 
@@ -188,6 +250,7 @@ public class RedisUtils {
      * @return 移除成功的数量
      */
     public Long sRemove(String key, Object value) {
+        checkKey(key);
         return redisTemplate.opsForSet().remove(key, value);
     }
 
@@ -198,6 +261,7 @@ public class RedisUtils {
      * @return 移除成功的数量
      */
     public Long sRemove(String key, Collection<Object> values) {
+        checkKey(key);
         return redisTemplate.opsForSet().remove(key, values.toArray());
     }
 
@@ -207,6 +271,7 @@ public class RedisUtils {
      * @return 随机元素
      */
     public Object sPop(String key) {
+        checkKey(key);
         return redisTemplate.opsForSet().pop(key);
     }
 
@@ -218,6 +283,8 @@ public class RedisUtils {
      * @return 是否移动成功
      */
     public Boolean sMove(String key, Object value, String destKey) {
+        checkKey(key);
+        checkKey(destKey);
         return redisTemplate.opsForSet().move(key, value, destKey);
     }
 
@@ -227,6 +294,7 @@ public class RedisUtils {
      * @return 集合大小
      */
     public Long sSize(String key) {
+        checkKey(key);
         return redisTemplate.opsForSet().size(key);
     }
 
@@ -237,6 +305,7 @@ public class RedisUtils {
      * @return 是否包含
      */
     public Boolean sIsMember(String key, Object value) {
+        checkKey(key);
         return redisTemplate.opsForSet().isMember(key, value);
     }
 
@@ -247,6 +316,8 @@ public class RedisUtils {
      * @return 交集集合
      */
     public Set<Object> sIntersect(String key, String otherKey) {
+        checkKey(key);
+        checkKey(otherKey);
         return redisTemplate.opsForSet().intersect(key, otherKey);
     }
 
@@ -257,6 +328,7 @@ public class RedisUtils {
      * @return 交集集合
      */
     public Set<Object> sIntersect(String key, Collection<String> otherKeys) {
+        checkKey(key);
         return redisTemplate.opsForSet().intersect(key, otherKeys);
     }
 
@@ -268,6 +340,8 @@ public class RedisUtils {
      * @return 交集元素数量
      */
     public Long sIntersectAndStore(String key, String otherKey, String destKey) {
+        checkKey(key);
+        checkKey(otherKey);
         return redisTemplate.opsForSet().intersectAndStore(key, otherKey, destKey);
     }
 
@@ -279,6 +353,8 @@ public class RedisUtils {
      * @return 交集元素数量
      */
     public Long sIntersectAndStore(String key, Collection<String> otherKeys, String destKey) {
+        checkKey(key);
+        checkKey(destKey);
         return redisTemplate.opsForSet().intersectAndStore(key, otherKeys, destKey);
     }
 
@@ -289,6 +365,8 @@ public class RedisUtils {
      * @return 并集集合
      */
     public Set<Object> sUnion(String key, String otherKey) {
+        checkKey(key);
+        checkKey(otherKey);
         return redisTemplate.opsForSet().union(key, otherKey);
     }
 
@@ -299,6 +377,8 @@ public class RedisUtils {
      * @return 并集集合
      */
     public Set<Object> sUnion(String key, Collection<String> otherKeys) {
+        checkKey(key);
+        checkKeys(otherKeys);
         return redisTemplate.opsForSet().union(key, otherKeys);
     }
 
@@ -310,6 +390,9 @@ public class RedisUtils {
      * @return 并集元素数量
      */
     public Long sUnionAndStore(String key, String otherKey, String destKey) {
+        checkKey(key);
+        checkKey(otherKey);
+        checkKey(destKey);
         return redisTemplate.opsForSet().unionAndStore(key, otherKey, destKey);
     }
 
@@ -321,6 +404,9 @@ public class RedisUtils {
      * @return 并集元素数量
      */
     public Long sUnionAndStore(String key, Collection<String> otherKeys, String destKey) {
+        checkKey(key);
+        checkKeys(otherKeys);
+        checkKey(destKey);
         return redisTemplate.opsForSet().unionAndStore(key, otherKeys, destKey);
     }
 
@@ -331,6 +417,8 @@ public class RedisUtils {
      * @return 差集集合
      */
     public Set<Object> sDifference(String key, String otherKey) {
+        checkKey(key);
+        checkKey(otherKey);
         return redisTemplate.opsForSet().difference(key, otherKey);
     }
 
@@ -341,6 +429,8 @@ public class RedisUtils {
      * @return 差集集合
      */
     public Set<Object> sDifference(String key, Collection<String> otherKeys) {
+        checkKey(key);
+        checkKeys(otherKeys);
         return redisTemplate.opsForSet().difference(key, otherKeys);
     }
 
@@ -352,6 +442,9 @@ public class RedisUtils {
      * @return 差集元素数量
      */
     public Long sDifferenceAndStore(String key, String otherKey, String destKey) {
+        checkKey(key);
+        checkKey(otherKey);
+        checkKey(destKey);
         return redisTemplate.opsForSet().differenceAndStore(key, otherKey, destKey);
     }
 
@@ -363,6 +456,9 @@ public class RedisUtils {
      * @return 差集元素数量
      */
     public Long sDifferenceAndStore(String key, Collection<String> otherKeys, String destKey) {
+        checkKey(key);
+        checkKeys(otherKeys);
+        checkKey(destKey);
         return redisTemplate.opsForSet().differenceAndStore(key, otherKeys, destKey);
     }
 
@@ -372,6 +468,7 @@ public class RedisUtils {
      * @return 集合所有元素
      */
     public Set<Object> sMembers(String key) {
+        checkKey(key);
         return redisTemplate.opsForSet().members(key);
     }
 
@@ -381,6 +478,7 @@ public class RedisUtils {
      * @return 随机元素
      */
     public Object sRandomMember(String key) {
+        checkKey(key);
         return redisTemplate.opsForSet().randomMember(key);
     }
 
@@ -391,6 +489,7 @@ public class RedisUtils {
      * @return 随机元素列表
      */
     public List<Object> sRandomMembers(String key, long count) {
+        checkKey(key);
         return redisTemplate.opsForSet().randomMembers(key, count);
     }
 
@@ -401,6 +500,7 @@ public class RedisUtils {
      * @return 去重随机元素集合
      */
     public Set<Object> sDistinctRandomMembers(String key, long count) {
+        checkKey(key);
         return redisTemplate.opsForSet().distinctRandomMembers(key, count);
     }
 
@@ -411,6 +511,7 @@ public class RedisUtils {
      * @return 游标
      */
     public Cursor<Object> sScan(String key, ScanOptions options) {
+        checkKey(key);
         return redisTemplate.opsForSet().scan(key, options);
     }
 
@@ -422,6 +523,7 @@ public class RedisUtils {
      * @return 列表长度
      */
     public Long lPush(String key, Object value) {
+        checkKey(key);
         return redisTemplate.opsForList().rightPush(key, value);
     }
 
@@ -433,6 +535,7 @@ public class RedisUtils {
      * @return 列表长度
      */
     public Long lPush(String key, Object value, long timeout) {
+        checkKey(key);
         Long count = redisTemplate.opsForList().rightPush(key, value);
         expire(key, timeout);
         return count;
@@ -445,6 +548,7 @@ public class RedisUtils {
      * @return 列表长度
      */
     public Long lPushAll(String key, List<Object> values) {
+        checkKey(key);
         return redisTemplate.opsForList().rightPushAll(key, values);
     }
 
@@ -456,6 +560,7 @@ public class RedisUtils {
      * @return 列表长度
      */
     public Long lPushAll(String key, List<Object> values, long timeout) {
+        checkKey(key);
         Long count = redisTemplate.opsForList().rightPushAll(key, values);
         expire(key, timeout);
         return count;
@@ -469,6 +574,7 @@ public class RedisUtils {
      * @return 列表
      */
     public List<Object> lRange(String key, long start, long end) {
+        checkKey(key);
         return redisTemplate.opsForList().range(key, start, end);
     }
 
@@ -478,6 +584,7 @@ public class RedisUtils {
      * @return 列表长度
      */
     public Long lSize(String key) {
+        checkKey(key);
         return redisTemplate.opsForList().size(key);
     }
 
@@ -488,6 +595,7 @@ public class RedisUtils {
      * @return 值
      */
     public Object lIndex(String key, long index) {
+        checkKey(key);
         return redisTemplate.opsForList().index(key, index);
     }
 
@@ -499,6 +607,7 @@ public class RedisUtils {
      * @return 移除数量
      */
     public Long lRemove(String key, long count, Object value) {
+        checkKey(key);
         return redisTemplate.opsForList().remove(key, count, value);
     }
 
@@ -510,6 +619,7 @@ public class RedisUtils {
      * @return 是否成功
      */
     public Boolean zAdd(String key, Object value, double score) {
+        checkKey(key);
         return redisTemplate.opsForZSet().add(key, value, score);
     }
 
@@ -521,6 +631,7 @@ public class RedisUtils {
      * @return 新的分数
      */
     public Double zIncrementScore(String key, Object value, double delta) {
+        checkKey(key);
         return redisTemplate.opsForZSet().incrementScore(key, value, delta);
     }
 
@@ -531,6 +642,7 @@ public class RedisUtils {
      * @return 分数
      */
     public Double zScore(String key, Object value) {
+        checkKey(key);
         return redisTemplate.opsForZSet().score(key, value);
     }
 
@@ -540,6 +652,7 @@ public class RedisUtils {
      * @return 集合大小
      */
     public Long zSize(String key) {
+        checkKey(key);
         return redisTemplate.opsForZSet().size(key);
     }
 
@@ -551,6 +664,7 @@ public class RedisUtils {
      * @return 元素集合
      */
     public Set<Object> zRangeByScore(String key, double min, double max) {
+        checkKey(key);
         return redisTemplate.opsForZSet().rangeByScore(key, min, max);
     }
 
@@ -562,6 +676,7 @@ public class RedisUtils {
      * @return 元素集合
      */
     public Set<Object> zReverseRange(String key, long start, long end) {
+        checkKey(key);
         return redisTemplate.opsForZSet().reverseRange(key, start, end);
     }
 
@@ -573,6 +688,7 @@ public class RedisUtils {
      * @return 元素和分数的集合
      */
     public Set<ZSetOperations.TypedTuple<Object>> zReverseRangeWithScores(String key, long start, long end) {
+        checkKey(key);
         return redisTemplate.opsForZSet().reverseRangeWithScores(key, start, end);
     }
 
@@ -583,6 +699,9 @@ public class RedisUtils {
      * @return 移除的数量
      */
     public Long zRemove(String key, Object... values) {
+        checkKey(key);
         return redisTemplate.opsForZSet().remove(key, values);
     }
+
+
 }

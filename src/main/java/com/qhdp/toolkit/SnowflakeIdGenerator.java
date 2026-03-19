@@ -5,7 +5,6 @@ import cn.hutool.core.lang.Assert;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -17,7 +16,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * @description: 雪花算法
  * @author: phoenix
  **/
-@Component
 @Slf4j
 public class SnowflakeIdGenerator {
     

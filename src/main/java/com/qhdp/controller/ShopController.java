@@ -10,6 +10,8 @@ import com.qhdp.utils.SystemConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 
 /**
  * <p>
@@ -30,8 +32,9 @@ public class ShopController {
      * @return 商铺详情数据
      */
     @GetMapping("/{id}")
-    public Result queryShopById(@PathVariable("id") Long id) {
-        return Result.success(shopService.getById(id));
+    public Result<Shop> queryShopById(@PathVariable Long id) {
+        Shop shop = shopService.queryShopById(id);
+        return Result.success(shop);
     }
 
     /**

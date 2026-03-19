@@ -144,7 +144,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         Integer level = info.getLevel();
         redisUtils.sAdd(
-                RedisKeyBuild.buildSeckillUserLevelKey(level),
+                RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_USER_LEVEL_MEMBERS_TAG_KEY, level),
                 userId
         );
     }
