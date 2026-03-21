@@ -1,9 +1,9 @@
 package com.qhdp.service.impl;
 
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.qhdp.constant.RedisConstants;
 import com.qhdp.constant.RedisKeyManage;
 import com.qhdp.entity.Shop;
 import com.qhdp.factory.BloomFilterHandlerFactory;
@@ -22,7 +22,6 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResult;
 import org.springframework.data.geo.GeoResults;
 import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -90,12 +89,26 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop>
         x = null;
         y = null;
         if (x == null || y == null) {
-            // 不需要坐标查询，按数据库查询
-            Page<Shop> page = query()
-                    .eq("type_id", typeId)
-                    .page(new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE));
-            // 返回数据
-            return page;
+            TypeReference<Page<Shop>> SHOP_PAGE_TYPE = new TypeReference<>() {
+            };
+            Page<Shop> shopPage = redisUtils.getPage(RedisKeyBuild.createRedisKey(RedisKeyManage.CACHE_SHOP_PAGE_KEY, typeId), SHOP_PAGE_TYPE);
+            if (Objects.nonNull(shopPage)) {
+                return shopPage;
+            }
+            log.info("查询商铺分页 从Redis缓存没有查询到 typeId:{}, current:{}", typeId, current);
+            RLock lock = serviceLockTool.getLock(LockType.Reentrant, LOCK_SHOP_PAGE_KEY, new String[]{String.valueOf(typeId), String.valueOf(current)});
+            lock.lock();
+            try {
+                shopPage = query()
+                        .eq("type_id", typeId)
+                        .page(new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE));
+
+                // 10. 数据库查询成功，写入Redis缓存
+                redisUtils.set(RedisKeyBuild.createRedisKey(RedisKeyManage.CACHE_SHOP_PAGE_KEY, typeId), shopPage, CACHE_SHOP_PAGE_TTL, TimeUnit.MINUTES);
+                return shopPage;
+            }finally {
+                lock.unlock();
+            }
         }
 
         // 2.计算分页参数

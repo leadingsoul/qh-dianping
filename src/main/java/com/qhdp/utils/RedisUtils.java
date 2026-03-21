@@ -1,10 +1,12 @@
 package com.qhdp.utils;
 
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.*;
@@ -151,6 +153,21 @@ public class RedisUtils {
     @SuppressWarnings("unchecked")
     public <T> Set<T> getSet(String key, Class<T> elementClass) {
         return get(key, Set.class, elementClass);
+    }
+
+    /**
+     * 从Redis获取分页对象 Page<T>
+     * @param key redis键
+     * @param typeReference 泛型类型（解决Page<T>泛型擦除问题）
+     * @return 分页对象
+     */
+    public <T> Page<T> getPage(String key, TypeReference<Page<T>> typeReference) {
+        Object value = redisTemplate.opsForValue().get(key);
+        if (value == null) {
+            return null;
+        }
+        // 反序列化为Page<T>
+        return JSONUtil.toBean(JSONUtil.toJsonStr(value), typeReference,true);
     }
     /**
      * 删除缓存

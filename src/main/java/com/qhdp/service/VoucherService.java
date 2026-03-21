@@ -1,6 +1,8 @@
 package com.qhdp.service;
 
 import com.qhdp.dto.Result;
+import com.qhdp.dto.SeckillVoucherDTO;
+import com.qhdp.dto.VoucherDTO;
 import com.qhdp.entity.Voucher;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -15,9 +17,9 @@ public interface VoucherService extends IService<Voucher> {
 
 
 
-    void addSeckillVoucher(Voucher voucher);
+    Long addSeckillVoucher(SeckillVoucherDTO voucherDTO);
 
     List<Voucher> queryVoucherOfShop(Long shopId);
 
-    void saveVoucher(Voucher voucher);
+    Long addVoucher(VoucherDTO voucherDTO);
 }

@@ -2,8 +2,11 @@ package com.qhdp.controller;
 
 
 import com.qhdp.dto.Result;
+import com.qhdp.dto.SeckillVoucherDTO;
+import com.qhdp.dto.VoucherDTO;
 import com.qhdp.entity.Voucher;
 import com.qhdp.service.VoucherService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,24 +28,24 @@ public class VoucherController {
 
     /**
      * 新增普通券
-     * @param voucher 优惠券信息
+     * @param voucherDto 优惠券信息
      * @return 优惠券id
      */
     @PostMapping
-    public Result<Long> addVoucher(@RequestBody Voucher voucher) {
-        voucherService.saveVoucher(voucher);
-        return Result.success(voucher.getId());
+    public Result<Long> addVoucher(@Valid @RequestBody VoucherDTO voucherDTO) {
+        final Long voucherId = voucherService.addVoucher(voucherDTO);
+        return Result.success(voucherId);
     }
 
     /**
      * 新增秒杀券
-     * @param voucher 优惠券信息，包含秒杀信息
+     * @param seckillVoucherDTO 优惠券信息，包含秒杀信息
      * @return 优惠券id
      */
-    @PostMapping("seckill")
-    public Result<Long> addSeckillVoucher(@RequestBody Voucher voucher) {
-        voucherService.addSeckillVoucher(voucher);
-        return Result.success(voucher.getId());
+    @PostMapping("/seckill")
+    public Result<Long> addSeckillVoucher(@Valid @RequestBody SeckillVoucherDTO seckillVoucherDTO) {
+        final Long voucherId = voucherService.addSeckillVoucher(seckillVoucherDTO);
+        return Result.success(voucherId);
     }
 
     /**
@@ -52,7 +55,6 @@ public class VoucherController {
      */
     @GetMapping("/list/{shopId}")
     public Result<List<Voucher>> queryVoucherOfShop(@PathVariable("shopId") Long shopId) {
-       List<Voucher> vouchers = voucherService.queryVoucherOfShop(shopId);
-       return Result.success(vouchers);
+        return Result.success(voucherService.queryVoucherOfShop(shopId));
     }
 }

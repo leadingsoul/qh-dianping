@@ -1,8 +1,10 @@
 package com.qhdp.entity;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
+
+import java.io.Serial;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 
@@ -10,7 +12,11 @@ import lombok.Data;
  */
 @TableName(value ="tb_voucher_order_router")
 @Data
+@Accessors(chain = true)
 public class VoucherOrderRouter extends BaseEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 订单id

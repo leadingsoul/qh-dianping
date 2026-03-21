@@ -13,6 +13,8 @@ public enum RedisKeyManage {
 
     CACHE_SHOP_TYPE_KEY("cache:shoptype:list","商铺类型列表","value为List<ShopType>类型列表","k"),
 
+    CACHE_SHOP_PAGE_KEY("cache:shop:page:%s","商铺分页列表","value为Page<Shop>类型列表","k"),
+
     CACHE_SHOP_KEY("cache:shop:%s","商铺id","value为Shop类型","k"),
  
     CACHE_SHOP_KEY_NULL("cache:shop_null:%s","商铺id","value为这是空值","k"),

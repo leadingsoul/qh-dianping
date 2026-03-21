@@ -8,19 +8,38 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 
 /**
  * 秒杀优惠券表，与优惠券是一对一关系
  * @TableName tb_seckill_voucher
  */
-@TableName(value ="tb_seckill_voucher")
 @Data
+@Accessors(chain = true)
+@TableName("tb_seckill_voucher")
 public class SeckillVoucher extends BaseEntity{
 
     /**
      * 关联的优惠券的id
      */
     private Long voucherId;
+
+    /**
+     * 初始化库存
+     */
+    private Integer initStock;
+
+
+    /**
+     * 允许参与的会员等级，逗号分隔，如："1,2,3"
+     */
+    private String allowedLevels;
+
+    /**
+     * 最低会员等级
+     */
+    private Integer minLevel;
 
     /**
      * 库存

@@ -3,6 +3,8 @@ package com.qhdp.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
 
@@ -12,7 +14,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_sign")
 @Data
-public class Sign {
+public class Sign implements Serializable {
     /**
      * 主键
      */
