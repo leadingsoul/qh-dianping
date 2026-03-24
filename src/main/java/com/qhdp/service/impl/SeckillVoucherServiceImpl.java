@@ -1,7 +1,6 @@
 package com.qhdp.service.impl;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qhdp.enums.RedisKeyManage;
 import com.qhdp.entity.SeckillVoucher;
@@ -23,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +52,8 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
     private final VoucherMapper voucherMapper;
 
     private final SeckillVoucherCaffeineUtils seckillVoucherCaffeineUtils;
+
+    private final SeckillVoucherMapper seckillVoucherMapper;
 
     @Override
     @ServiceLock(lockType= LockType.Read,name = UPDATE_SECKILL_VOUCHER_LOCK,keys = {"#voucherId"})
@@ -158,6 +160,11 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
         }finally {
             lock.unlock();
         }
+    }
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean rollbackStock(final Long voucherId) {
+        return seckillVoucherMapper.rollbackStock(voucherId) > 0;
     }
 }
 

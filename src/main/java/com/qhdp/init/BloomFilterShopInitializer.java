@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -31,9 +32,7 @@ public class BloomFilterShopInitializer implements CommandLineRunner {
             BloomFilterHandler filterHandler = bloomFilterHandlerFactory.get(Constant.BLOOM_FILTER_HANDLER_SHOP);
 
             // 查询数据库所有有效商铺ID
-            LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.select(Shop::getId); // 只查询ID，提升性能
-            List<Shop> shopList = shopMapper.selectList(queryWrapper);
+            List<Shop> shopList = getAllShopId();
 
             // 批量添加到布隆过滤器
             int count = 0;
@@ -46,5 +45,12 @@ public class BloomFilterShopInitializer implements CommandLineRunner {
         } catch (Exception e) {
             log.error("❌ 商铺布隆过滤器初始化失败", e);
         }
+    }
+
+    @Transactional
+    List<Shop> getAllShopId() {
+        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(Shop::getId);
+        return shopMapper.selectList(queryWrapper);
     }
 }

@@ -31,7 +31,7 @@ public interface VoucherService extends IService<Voucher> {
 
     void unsubscribe(@Valid VoucherSubscribeDTO voucherSubscribeDTO);
 
-    String getSubscribeStatus(@Valid VoucherSubscribeDTO voucherSubscribeDTO);
+    Integer getSubscribeStatus(@Valid VoucherSubscribeDTO voucherSubscribeDTO);
 
     List<GetSubscribeStatusVO> getSubscribeStatusBatch(@Valid VoucherSubscribeBatchDTO voucherSubscribeBatchDTO);
 

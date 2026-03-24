@@ -55,6 +55,11 @@ public class RedisUtils {
         return redisTemplate.execute(script, keys, args);
     }
 
+    public Long getExpire(String key, TimeUnit timeUnit) {
+        checkKey(key);
+        return redisTemplate.getExpire(key, timeUnit);
+    }
+
     /**
      * 设置缓存
      * @param key 缓存键
@@ -262,6 +267,12 @@ public class RedisUtils {
         redisTemplate.opsForHash().put(key, hashKey, value);
     }
 
+    public void hSet(String statusKey, String userIdStr, Integer code, Long ttlSeconds, TimeUnit timeUnit) {
+        hSet(statusKey, userIdStr, code);
+        // 设置过期时间
+        expire(statusKey, ttlSeconds);
+    }
+
     /**
      * 获取Hash缓存
      * @param key 缓存键
@@ -271,6 +282,10 @@ public class RedisUtils {
     public Object hGet(String key, String hashKey) {
         checkKey(key);
         return redisTemplate.opsForHash().get(key, hashKey);
+    }
+
+    public <T> T hGet(String key, String hashKey, Class<T> clazz) {
+        return JSONUtil.toBean(JSONUtil.toJsonStr(hGet(key, hashKey)), clazz);
     }
 
     /**
@@ -775,6 +790,19 @@ public class RedisUtils {
         return redisTemplate.opsForZSet().rangeByScore(key, min, max);
     }
 
+    public <T> Set<T> zRange(String key, long min, long max, Class<T> clazz) {
+        checkKey(key);
+        Set<Object> set = redisTemplate.opsForZSet().range(key, min, max);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        }
+        // 类型转换并返回
+        return set.stream()
+                .map(clazz::cast)
+                .collect(Collectors.toSet());
+    }
+
+
     public <T> Set<ZSetOperations.TypedTuple<T>> zRangeByScoreWithScore(String key, double min, double max ,
                                                                long start, long end, Class<T> clazz) {
         checkKey(key);
@@ -1005,6 +1033,7 @@ public class RedisUtils {
         checkKey(key);
         return redisTemplate.opsForGeo().remove(key, members);
     }
+
 
 
 }

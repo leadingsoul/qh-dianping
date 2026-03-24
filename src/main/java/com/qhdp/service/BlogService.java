@@ -1,5 +1,8 @@
 package com.qhdp.service;
 
+import com.qhdp.dto.Result;
+import com.qhdp.dto.ScrollResult;
+import com.qhdp.dto.UserDTO;
 import com.qhdp.entity.Blog;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -19,4 +22,10 @@ public interface BlogService extends IService<Blog> {
     List<Blog> queryMyBlog(Integer current);
 
     List<Blog> queryHotBlog(Integer current);
+
+    Blog queryBlogById(Long id);
+
+    List<UserDTO> queryBlogLikes(Long id);
+
+    ScrollResult queryBlogOfFollow(Long max, Integer offset);
 }

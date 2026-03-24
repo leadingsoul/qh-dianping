@@ -3,6 +3,7 @@ package com.qhdp.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qhdp.dto.Result;
+import com.qhdp.dto.ScrollResult;
 import com.qhdp.dto.UserDTO;
 import com.qhdp.entity.Blog;
 import com.qhdp.entity.User;
@@ -27,7 +28,6 @@ import java.util.List;
 public class BlogController {
 
     private final BlogService blogService;
-    private final UserService userService;
 
     @PostMapping
     public Result<Long> saveBlog(@RequestBody Blog blog) {
@@ -54,5 +54,33 @@ public class BlogController {
         // 根据用户查询
         List<Blog> blogs = blogService.queryHotBlog(current);
         return Result.success(blogs);
+    }
+
+    @GetMapping("/{id}")
+    public Result<Blog> queryBlogById(@PathVariable Long id) {
+        return Result.success(blogService.queryBlogById(id));
+    }
+
+    @GetMapping("/likes/{id}")
+    public Result<List<UserDTO>> queryBlogLikes(@PathVariable Long id) {
+        return Result.success(blogService.queryBlogLikes(id));
+    }
+
+    @GetMapping("/of/user")
+    public Result<List<Blog>> queryBlogByUserId(
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam("id") Long id) {
+        // 根据用户查询
+        Page<Blog> page = blogService.query()
+                .eq("user_id", id).page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+        // 获取当前页数据
+        List<Blog> records = page.getRecords();
+        return Result.success(records);
+    }
+
+    @GetMapping("/of/follow")
+    public Result<ScrollResult> queryBlogOfFollow(
+            @RequestParam("lastId") Long max, @RequestParam(value = "offset", defaultValue = "0") Integer offset){
+        return Result.success(blogService.queryBlogOfFollow(max, offset));
     }
 }

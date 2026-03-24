@@ -4,6 +4,7 @@ import com.qhdp.entity.SeckillVoucher;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.qhdp.vo.SeckillVoucherFullVO;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
 * @author phoenix
@@ -21,4 +22,7 @@ public interface SeckillVoucherService extends IService<SeckillVoucher> {
     SeckillVoucherFullVO queryByVoucherId(@NotNull Long voucherId);
 
     void loadVoucherStock(Long voucherId);
+
+    @Transactional(rollbackFor = Exception.class)
+    boolean rollbackStock(Long voucherId);
 }
