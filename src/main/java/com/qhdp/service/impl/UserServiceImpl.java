@@ -6,7 +6,7 @@ import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qhdp.dto.LoginFormDTO;
-import com.qhdp.constant.RedisKeyManage;
+import com.qhdp.enums.RedisKeyManage;
 import com.qhdp.dto.UserDTO;
 import com.qhdp.entity.User;
 import com.qhdp.entity.UserInfo;

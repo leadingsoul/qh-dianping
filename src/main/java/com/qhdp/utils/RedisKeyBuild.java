@@ -1,6 +1,6 @@
 package com.qhdp.utils;
 
-import com.qhdp.constant.RedisKeyManage;
+import com.qhdp.enums.RedisKeyManage;
 import lombok.Getter;
 
 import java.util.Objects;

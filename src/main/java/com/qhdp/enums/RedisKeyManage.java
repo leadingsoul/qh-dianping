@@ -1,4 +1,4 @@
-package com.qhdp.constant;
+package com.qhdp.enums;
 
 
 import lombok.Getter;

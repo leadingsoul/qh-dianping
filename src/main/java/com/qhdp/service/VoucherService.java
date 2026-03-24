@@ -1,10 +1,10 @@
 package com.qhdp.service;
 
-import com.qhdp.dto.Result;
-import com.qhdp.dto.SeckillVoucherDTO;
-import com.qhdp.dto.VoucherDTO;
+import com.qhdp.dto.*;
 import com.qhdp.entity.Voucher;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.qhdp.vo.GetSubscribeStatusVO;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -22,4 +22,18 @@ public interface VoucherService extends IService<Voucher> {
     List<Voucher> queryVoucherOfShop(Long shopId);
 
     Long addVoucher(VoucherDTO voucherDTO);
+
+    void updateSeckillVoucher(@Valid UpdateSeckillVoucherDTO updateSeckillVoucherDTO);
+
+    void updateSeckillVoucherStock(@Valid UpdateSeckillVoucherStockDTO updateSeckillVoucherStockDTO);
+
+    void subscribe(@Valid VoucherSubscribeDTO voucherSubscribeDTO);
+
+    void unsubscribe(@Valid VoucherSubscribeDTO voucherSubscribeDTO);
+
+    String getSubscribeStatus(@Valid VoucherSubscribeDTO voucherSubscribeDTO);
+
+    List<GetSubscribeStatusVO> getSubscribeStatusBatch(@Valid VoucherSubscribeBatchDTO voucherSubscribeBatchDTO);
+
+    void delayVoucherReminder(@Valid DelayVoucherReminderDTO delayVoucherReminderDTO);
 }

@@ -3,28 +3,47 @@ package com.qhdp.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.qhdp.constant.RedisKeyManage;
-import com.qhdp.dto.SeckillVoucherDTO;
-import com.qhdp.dto.VoucherDTO;
+import com.qhdp.delay.context.DelayQueueContext;
+import com.qhdp.delay.message.DelayedVoucherReminderMessage;
+import com.qhdp.enums.BaseCode;
+import com.qhdp.enums.RedisKeyManage;
+import com.qhdp.dto.*;
 import com.qhdp.entity.SeckillVoucher;
 import com.qhdp.entity.Voucher;
+import com.qhdp.enums.StockUpdateType;
+import com.qhdp.exception.qhdpFrameException;
 import com.qhdp.factory.BloomFilterHandlerFactory;
-import com.qhdp.service.SeckillVoucherService;
+import com.qhdp.mapper.SeckillVoucherMapper;
+import com.qhdp.service.VoucherOrderService;
 import com.qhdp.service.VoucherService;
 import com.qhdp.mapper.VoucherMapper;
+import com.qhdp.servicelocker.LockType;
+import com.qhdp.servicelocker.annotation.ServiceLock;
 import com.qhdp.toolkit.SnowflakeIdGenerator;
 import com.qhdp.utils.RedisKeyBuild;
 import com.qhdp.utils.RedisUtils;
+import com.qhdp.utils.SeckillVoucherCacheInvalidationPublisher;
+import com.qhdp.utils.SpringUtil;
+import com.qhdp.vo.GetSubscribeStatusVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.qhdp.constant.Constant.BLOOM_FILTER_HANDLER_VOUCHER;
+import static com.qhdp.constant.Constant.DELAY_VOUCHER_REMINDER;
+import static com.qhdp.constant.DistributedLockConstants.UPDATE_SECKILL_VOUCHER_LOCK;
+import static com.qhdp.service.impl.VoucherOrderServiceImpl.SECKILL_ORDER_EXECUTOR;
 
 /**
 * @author phoenix
@@ -33,15 +52,23 @@ import static com.qhdp.constant.Constant.BLOOM_FILTER_HANDLER_VOUCHER;
 */
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher>
     implements VoucherService{
 
-    private final SeckillVoucherService seckillVoucherService;
+    private final SeckillVoucherMapper seckillVoucherMapper;
 
     private final BloomFilterHandlerFactory bloomFilterHandlerFactory;
 
     private final SnowflakeIdGenerator snowflakeIdGenerator;
+
     private final RedisUtils redisUtils;
+
+    private final DelayQueueContext delayQueueContext;
+
+    private final SeckillVoucherCacheInvalidationPublisher seckillVoucherCacheInvalidationPublisher;
+
+    private final VoucherOrderService voucherOrderService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -62,7 +89,7 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher>
         seckillVoucher.setEndTime(seckillVoucherDTO.getEndTime());
         seckillVoucher.setAllowedLevels(seckillVoucherDTO.getAllowedLevels());
         seckillVoucher.setMinLevel(seckillVoucherDTO.getMinLevel());
-        seckillVoucherService.save(seckillVoucher);
+        seckillVoucherMapper.insert(seckillVoucher);
         long ttlSeconds = Math.max(
                 DateUtil.betweenMs(DateUtil.date(), seckillVoucher.getEndTime())/1000,
                 1L
@@ -106,6 +133,176 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher>
         save(voucher);
         bloomFilterHandlerFactory.get(BLOOM_FILTER_HANDLER_VOUCHER).add(voucher.getId().toString());
         return voucher.getId();
+    }
+
+    @Override
+    @ServiceLock(lockType= LockType.Write,name = UPDATE_SECKILL_VOUCHER_LOCK,keys = {"#updateSeckillVoucherDTO.voucherId"})
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSeckillVoucher(UpdateSeckillVoucherDTO updateSeckillVoucherDTO) {
+        Long voucherId = updateSeckillVoucherDTO.getVoucherId();
+        boolean updatedVoucher = false;
+        var voucherUpdate = this.lambdaUpdate().eq(Voucher::getId, voucherId);
+        if (updateSeckillVoucherDTO.getTitle() != null) {
+            voucherUpdate.set(Voucher::getTitle, updateSeckillVoucherDTO.getTitle());
+            updatedVoucher = true;
+        }
+        if (updateSeckillVoucherDTO.getSubTitle() != null) {
+            voucherUpdate.set(Voucher::getSubTitle, updateSeckillVoucherDTO.getSubTitle());
+            updatedVoucher = true;
+        }
+        if (updateSeckillVoucherDTO.getRules() != null) {
+            voucherUpdate.set(Voucher::getRules, updateSeckillVoucherDTO.getRules());
+            updatedVoucher = true;
+        }
+        if (updateSeckillVoucherDTO.getPayValue() != null) {
+            voucherUpdate.set(Voucher::getPayValue, updateSeckillVoucherDTO.getPayValue());
+            updatedVoucher = true;
+        }
+        if (updateSeckillVoucherDTO.getActualValue() != null) {
+            voucherUpdate.set(Voucher::getActualValue, updateSeckillVoucherDTO.getActualValue());
+            updatedVoucher = true;
+        }
+        if (updateSeckillVoucherDTO.getType() != null) {
+            voucherUpdate.set(Voucher::getType, updateSeckillVoucherDTO.getType());
+            updatedVoucher = true;
+        }
+        if (updateSeckillVoucherDTO.getStatus() != null) {
+            voucherUpdate.set(Voucher::getStatus, updateSeckillVoucherDTO.getStatus());
+            updatedVoucher = true;
+        }
+        if (updatedVoucher) {
+            voucherUpdate.set(Voucher::getUpdateTime, LocalDateTimeUtil.now()).update();
+        }
+
+        boolean updatedSeckill = false;
+        LambdaUpdateWrapper<SeckillVoucher> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(SeckillVoucher::getVoucherId, voucherId);
+        if (updateSeckillVoucherDTO.getBeginTime() != null) {
+            wrapper.set(SeckillVoucher::getBeginTime, updateSeckillVoucherDTO.getBeginTime());
+            updatedSeckill = true;
+        }
+        if (updateSeckillVoucherDTO.getEndTime() != null) {
+            wrapper.set(SeckillVoucher::getEndTime, updateSeckillVoucherDTO.getEndTime());
+            updatedSeckill = true;
+        }
+        if (updateSeckillVoucherDTO.getAllowedLevels() != null) {
+            wrapper.set(SeckillVoucher::getAllowedLevels, updateSeckillVoucherDTO.getAllowedLevels());
+            updatedSeckill = true;
+        }
+        if (updateSeckillVoucherDTO.getMinLevel() != null) {
+            wrapper.set(SeckillVoucher::getMinLevel, updateSeckillVoucherDTO.getMinLevel());
+            updatedSeckill = true;
+        }
+        if (updatedSeckill) {
+            wrapper.set(SeckillVoucher::getUpdateTime, LocalDateTimeUtil.now());
+        }
+        if (updatedSeckill) {
+            seckillVoucherMapper.update(null, wrapper);
+        }
+// 6. 最终逻辑：更新成功后清理缓存
+        if (updatedVoucher || updatedSeckill) {
+            seckillVoucherCacheInvalidationPublisher.publishInvalidate(voucherId, "update");
+        }
+    }
+
+    @Override
+    @ServiceLock(lockType= LockType.Write,name = UPDATE_SECKILL_VOUCHER_LOCK,keys = {"#updateSeckillVoucherDTO.voucherId"})
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSeckillVoucherStock(UpdateSeckillVoucherStockDTO updateSeckillVoucherStockDTO) {
+        SeckillVoucher seckillVoucher = seckillVoucherMapper.selectOne(
+                Wrappers.lambdaQuery(SeckillVoucher.class)
+                        .eq(SeckillVoucher::getVoucherId, updateSeckillVoucherStockDTO.getVoucherId()));
+        if (Objects.isNull(seckillVoucher)) {
+            throw new qhdpFrameException(BaseCode.SECKILL_VOUCHER_NOT_EXIST);
+        }
+        Integer oldStock = seckillVoucher.getStock();
+        Integer oldInitStock = seckillVoucher.getInitStock();
+        Integer newInitStock = updateSeckillVoucherStockDTO.getInitStock();
+        int changeStock = newInitStock - oldInitStock;
+        if (changeStock == 0) {
+            return;
+        }
+        int newStock = oldStock + changeStock;
+        if (newStock < 0 ) {
+            throw new qhdpFrameException(BaseCode.AFTER_SECKILL_VOUCHER_REMAIN_STOCK_NOT_NEGATIVE_NUMBER);
+        }
+        StockUpdateType stockUpdateType = StockUpdateType.INCREASE;
+        if (changeStock < 0) {
+            stockUpdateType = StockUpdateType.DECREASE;
+        }
+        seckillVoucherMapper.update(
+                null,
+                Wrappers.lambdaUpdate(SeckillVoucher.class)
+                        .set(SeckillVoucher::getStock, newStock)
+                        .set(SeckillVoucher::getInitStock, newInitStock)
+                        .set(SeckillVoucher::getUpdateTime, LocalDateTimeUtil.now())
+                        .eq(SeckillVoucher::getVoucherId, seckillVoucher.getVoucherId()));
+        String oldRedisStockStr = redisUtils.get(RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_STOCK_TAG_KEY,
+                updateSeckillVoucherStockDTO.getVoucherId()), String.class);
+        Integer newRedisStock = null;
+        if (StrUtil.isBlank(oldRedisStockStr)) {
+            redisUtils.set(RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_STOCK_TAG_KEY,
+                    updateSeckillVoucherStockDTO.getVoucherId()),String.valueOf(newInitStock));
+        }else {
+            int oldRedisStock = Integer.parseInt(oldRedisStockStr);
+            newRedisStock = oldRedisStock + changeStock;
+            if (newRedisStock < 0 ) {
+                throw new qhdpFrameException(BaseCode.AFTER_SECKILL_VOUCHER_REMAIN_STOCK_NOT_NEGATIVE_NUMBER);
+            }
+            redisUtils.set(RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_STOCK_TAG_KEY,
+                    updateSeckillVoucherStockDTO.getVoucherId()),String.valueOf(newRedisStock));
+        }
+        log.info("修改库存成功！修改库存类型：{},修改前：数据库初始库存：{},redis旧库存：{},修改后：数据库初始库存：{},redis新库存：{}",
+                stockUpdateType.getMsg(),
+                oldInitStock,
+                StrUtil.isBlank(oldRedisStockStr) ? null : oldRedisStockStr,
+                newInitStock,
+                newRedisStock
+        );
+        //如果是增加库存,尝试将资格自动分配给订阅队列中最早的未购用户
+        if (stockUpdateType == StockUpdateType.INCREASE) {
+            SECKILL_ORDER_EXECUTOR.execute(() -> voucherOrderService
+                    .autoIssueVoucherToEarliestSubscriber(seckillVoucher.getVoucherId(),null));
+        }
+    }
+
+    @Override
+    public void subscribe(VoucherSubscribeDTO voucherSubscribeDTO) {
+        //todo
+    }
+
+    @Override
+    public void unsubscribe(VoucherSubscribeDTO voucherSubscribeDTO) {
+        //todo
+    }
+
+    @Override
+    public String getSubscribeStatus(VoucherSubscribeDTO voucherSubscribeDTO) {
+        //todo
+        return "";
+    }
+
+    @Override
+    public List<GetSubscribeStatusVO> getSubscribeStatusBatch(VoucherSubscribeBatchDTO voucherSubscribeBatchDTO) {
+        //todo
+        return List.of();
+    }
+
+    @Override
+    public void delayVoucherReminder(DelayVoucherReminderDTO delayVoucherReminderDTO) {
+        SeckillVoucher seckillVoucher = seckillVoucherMapper.selectById(delayVoucherReminderDTO.getVoucherId());
+        if (Objects.isNull(seckillVoucher)) {
+            throw new qhdpFrameException(BaseCode.SECKILL_VOUCHER_NOT_EXIST);
+        }
+        DelayedVoucherReminderMessage msg = new DelayedVoucherReminderMessage(
+                seckillVoucher.getVoucherId(),
+                seckillVoucher.getBeginTime()
+        );
+        String content = JSON.toJSONString(msg);
+        String topic = SpringUtil.getPrefixDistinctionName() + "-" + DELAY_VOUCHER_REMINDER;
+        Integer delaySeconds = delayVoucherReminderDTO.getDelaySeconds();
+        delayQueueContext.sendMessage(topic, content, delayVoucherReminderDTO.getDelaySeconds(), TimeUnit.SECONDS);
+        log.info("[测试延迟发送] 已调度提醒消息 voucherId={} delaySeconds={} topic={}", seckillVoucher.getVoucherId(), delaySeconds, topic);
     }
 }
 

@@ -4,7 +4,7 @@ import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.qhdp.constant.RedisKeyManage;
+import com.qhdp.enums.RedisKeyManage;
 import com.qhdp.entity.Shop;
 import com.qhdp.factory.BloomFilterHandlerFactory;
 import com.qhdp.service.ShopService;

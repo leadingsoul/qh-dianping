@@ -10,4 +10,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface VoucherOrderService extends IService<VoucherOrder> {
 
+    boolean autoIssueVoucherToEarliestSubscriber(Long voucherId, Long excludeUserId);
 }

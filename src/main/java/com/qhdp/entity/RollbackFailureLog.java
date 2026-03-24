@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * Redis回滚失败日志表
@@ -11,6 +12,7 @@ import lombok.Data;
  */
 @TableName(value ="tb_rollback_failure_log")
 @Data
+@Accessors(chain = true)
 public class RollbackFailureLog extends BaseEntity {
 
 

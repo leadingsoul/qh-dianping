@@ -8,6 +8,15 @@ spring:
     url: ${leading.datasource.url}
     username: ${leading.datasource.username}
     password: ${leading.datasource.password}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 12
+      connection-timeout: 60000
+      connection-test-query: SELECT 1
+      idle-timeout: 500000
+      max-lifetime: 540000
+      leak-detection-threshold: 0
+
   data:
     redis:
       host: ${leading.data.redis.host}
@@ -25,6 +34,26 @@ spring:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
+  kafka:
+    bootstrap-servers: ${leading.kafka.bootstrap-servers}
+    producer:
+      retries: 1
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      #默认的消费组ID
+      group-id: create_voucher_order
+      #是否自动提交offset - 改为自动提交
+      enable-auto-commit: true
+      #提交offset延时
+      auto-commit-interval: 200
+      # 当kafka中没有初始offset或offset超出范围时将自动重置offset
+      # earliest:重置为分区中最小的offset;
+      # latest:重置为分区中最新的offset(消费分区中新产生的数据);
+      # none:只要有一个分区不存在已提交的offset,就抛出异常;
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 mybatis-plus:
   type-aliases-package: com.qhdp.entity # 别名扫描包
   configuration:

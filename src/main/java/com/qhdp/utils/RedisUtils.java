@@ -1,26 +1,26 @@
 package com.qhdp.utils;
 
+import cn.hutool.cache.CacheUtil;
 import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.util.ParameterizedTypeImpl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.*;
 import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ScanOptions;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.*;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -42,6 +42,17 @@ public class RedisUtils {
         for (String key : keys) {
             checkKey(key);
         }
+    }
+
+    /**
+     * 执行Lua脚本
+     * @param script Lua脚本
+     * @param keys Redis键
+     * @param args 参数
+     */
+    // 通用泛型方法，支持任意返回类型的 RedisScript
+    public <T> T execute(DefaultRedisScript<T> script, List<String> keys, String[] args) {
+        return redisTemplate.execute(script, keys, args);
     }
 
     /**
@@ -74,6 +85,16 @@ public class RedisUtils {
     public void set(String redisKey, Object value, Long cacheTtl, TimeUnit timeUnit) {
         checkKey(redisKey);
         redisTemplate.opsForValue().set(redisKey, value, cacheTtl, timeUnit);
+    }
+
+    public boolean setIfAbsent(String key, Object value) {
+        checkKey(key);
+        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, value));
+    }
+
+    public boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
+        checkKey(key);
+        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, value, ttl, timeUnit));
     }
 
     /**
@@ -576,6 +597,20 @@ public class RedisUtils {
         return redisTemplate.opsForSet().distinctRandomMembers(key, count);
     }
 
+    public <T> Set<T> sDistinctRandomMembers(String key, long count, Class<T> clazz) {
+        checkKey(key);
+        Set<Object> set = redisTemplate.opsForSet().distinctRandomMembers(key, count);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        }
+        // 4. 类型转换：将Object转为指定泛型T
+        return set.stream()
+                .filter(Objects::nonNull) // 过滤null元素
+                .map(clazz::cast) // 安全类型转换
+                .collect(Collectors.toSet());
+    }
+
+
     /**
      * 游标遍历Set集合
      * @param key 键
@@ -740,6 +775,81 @@ public class RedisUtils {
         return redisTemplate.opsForZSet().rangeByScore(key, min, max);
     }
 
+    public <T> Set<ZSetOperations.TypedTuple<T>> zRangeByScoreWithScore(String key, double min, double max ,
+                                                               long start, long end, Class<T> clazz) {
+        checkKey(key);
+        Set<ZSetOperations.TypedTuple<Object>> set = redisTemplate.opsForZSet().rangeByScoreWithScores(key, min, max,start, end);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return typedTupleStringParseObjects(set, clazz);
+    }
+
+    public <T> Set<ZSetOperations.TypedTuple<T>> typedTupleStringParseObjects(Set<ZSetOperations.TypedTuple<Object>> sources, Class<T> clazz){
+        if (sources == null) {
+            return new HashSet<>();
+        }
+        Set<ZSetOperations.TypedTuple<T>> set = new HashSet<>(sources.size());
+        for (ZSetOperations.TypedTuple<Object> typedTuple : sources) {
+            Object value = typedTuple.getValue();
+            T complex = getComplex(value, clazz);
+            Double score = typedTuple.getScore();
+            DefaultTypedTuple defaultTypedTuple = new DefaultTypedTuple(complex,score);
+            set.add(defaultTypedTuple);
+        }
+        return set;
+    }
+    public <T> T getComplex(Object source, Class<T> clazz) {
+        if (source == null) {
+            return null;
+        }
+        if (clazz.isAssignableFrom(String.class)) {
+            if (source instanceof String) {
+                return (T)source;
+            }else{
+                return (T) JSON.toJSONString(source);
+            }
+        }
+        return source instanceof String ? JSON.parseObject((String) source, buildType(clazz)) : null;
+    }
+    public Type buildType(Type... types) {
+        ParameterizedTypeImpl beforeType = null;
+        if (types != null && types.length > 0) {
+            if (types.length == 1) {
+                return new ParameterizedTypeImpl(new Type[]{null}, null,
+                        types[0]);
+            }
+
+            for (int i = types.length - 1; i > 0; i--) {
+                beforeType = new ParameterizedTypeImpl(new Type[]{beforeType == null ? types[i] : beforeType}, null,
+                        types[i - 1]);
+            }
+        }
+        return beforeType;
+    }
+    /**
+     * 执行ZUNIONSTORE命令，将多个有序集合的并集结果存储到目标有序集合中
+     *
+     * @param key 第一个有序集合的键
+     * @param otherKey 其他有序集合的键
+     * @param destKey 目标有序集合的键，用于存储并集结果
+     * @return 返回结果有序集合中的元素个数
+     * @throws IllegalArgumentException 如果key为null或空字符串
+     */
+    public Long zUnionAndStore(String key, String otherKey, String destKey) {
+        checkKey(key);
+        checkKey(otherKey);
+        checkKey(destKey);
+        return redisTemplate.opsForZSet().unionAndStore(key, otherKey, destKey);
+    }
+
+    public Long zUnionAndStore(String key, Collection<String> otherKeys, String destKey) {
+        checkKey(key);
+        checkKeys(otherKeys);
+        checkKey(destKey);
+        return redisTemplate.opsForZSet().unionAndStore(key, otherKeys, destKey);
+    }
+
     /**
      * 获取有序集合中指定排名范围的元素（从高到低）
      * @param key 缓存键
@@ -750,6 +860,18 @@ public class RedisUtils {
     public Set<Object> zReverseRange(String key, long start, long end) {
         checkKey(key);
         return redisTemplate.opsForZSet().reverseRange(key, start, end);
+    }
+
+    public  <T> Set<T> zReverseRange(String key, long start, long end, Class<T> clazz) {
+        checkKey(key);
+        Set<Object> set = redisTemplate.opsForZSet().reverseRange(key, start, end);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return set.stream()
+                .filter(Objects::nonNull) // 过滤null元素
+                .map(clazz::cast) // 安全类型转换
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -883,4 +1005,6 @@ public class RedisUtils {
         checkKey(key);
         return redisTemplate.opsForGeo().remove(key, members);
     }
+
+
 }
