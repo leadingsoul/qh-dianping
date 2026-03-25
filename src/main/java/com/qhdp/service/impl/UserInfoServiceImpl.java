@@ -8,7 +8,7 @@ import com.qhdp.exception.qhdpFrameException;
 import com.qhdp.service.UserInfoService;
 import com.qhdp.mapper.UserInfoMapper;
 import com.qhdp.servicelocker.LockType;
-import com.qhdp.servicelocker.annotation.ServiceLock;
+import com.qhdp.annotation.ServiceLock;
 import com.qhdp.utils.RedisKeyBuild;
 import com.qhdp.utils.RedisUtils;
 import lombok.RequiredArgsConstructor;

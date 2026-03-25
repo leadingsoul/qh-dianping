@@ -20,7 +20,7 @@ import java.util.UUID;
 public class UploadController {
 
     @PostMapping("blog")
-    public Result uploadImage(@RequestParam("file") MultipartFile image) {
+    public Result<String> uploadImage(@RequestParam("file") MultipartFile image) {
         try {
             // 获取原始文件名称
             String originalFilename = image.getOriginalFilename();
@@ -30,20 +30,20 @@ public class UploadController {
             image.transferTo(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName));
             // 返回结果
             log.debug("文件上传成功，{}", fileName);
-            return Result.success(fileName);
+            return Result.success(fileName,"文件上传成功");
         } catch (IOException e) {
             throw new RuntimeException("文件上传失败", e);
         }
     }
 
     @GetMapping("/blog/delete")
-    public Result deleteBlogImg(@RequestParam("name") String filename) {
+    public Result<Void> deleteBlogImg(@RequestParam("name") String filename) {
         File file = new File(SystemConstants.IMAGE_UPLOAD_DIR, filename);
         if (file.isDirectory()) {
             return Result.error("错误的文件名称");
         }
         FileUtil.del(file);
-        return Result.success(null);
+        return Result.success("文件删除成功");
     }
 
     private String createNewFileName(String originalFilename) {

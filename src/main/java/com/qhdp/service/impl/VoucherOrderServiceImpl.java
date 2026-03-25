@@ -5,25 +5,34 @@ import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.qhdp.entity.UserInfo;
-import com.qhdp.entity.VoucherOrder;
-import com.qhdp.enums.BaseCode;
-import com.qhdp.enums.LogType;
-import com.qhdp.enums.RedisKeyManage;
+import com.qhdp.annotation.RepeatExecuteLimit;
+import com.qhdp.dto.CancelVoucherOrderDTO;
+import com.qhdp.dto.GetVoucherOrderByVoucherIdDTO;
+import com.qhdp.dto.GetVoucherOrderDTO;
+import com.qhdp.dto.VoucherReconcileLogDTO;
+import com.qhdp.entity.*;
+import com.qhdp.enums.*;
 import com.qhdp.exception.qhdpFrameException;
 import com.qhdp.kafka.lua.SeckillVoucherDomain;
 import com.qhdp.kafka.lua.SeckillVoucherOperate;
+import com.qhdp.kafka.message.MessageExtend;
 import com.qhdp.kafka.message.SeckillVoucherMessage;
 import com.qhdp.kafka.producer.SeckillVoucherProducer;
+import com.qhdp.kafka.redis.RedisVoucherData;
+import com.qhdp.mapper.VoucherMapper;
+import com.qhdp.mapper.VoucherOrderRouterMapper;
 import com.qhdp.service.SeckillVoucherService;
 import com.qhdp.service.UserInfoService;
 import com.qhdp.service.VoucherOrderService;
 import com.qhdp.mapper.VoucherOrderMapper;
+import com.qhdp.service.VoucherReconcileLogService;
 import com.qhdp.toolkit.SnowflakeIdGenerator;
 import com.qhdp.utils.RedisKeyBuild;
 import com.qhdp.utils.RedisUtils;
 import com.qhdp.utils.SpringUtil;
+import com.qhdp.utils.UserHolder;
 import com.qhdp.vo.SeckillVoucherFullVO;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +42,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -47,12 +60,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.qhdp.constant.Constant.SECKILL_VOUCHER_TOPIC;
+import static com.qhdp.constant.RepeatExecuteLimitConstant.SECKILL_VOUCHER_ORDER;
 
 /**
 * @author phoenix
-* @description 针对表【tb_voucher_order】的数据库操作Service实现
-* @createDate 2026-03-11 14:33:53
-*/
+* &#064;description  针对表【tb_voucher_order】的数据库操作Service实现
+* &#064;createDate  2026-03-11 14:33:53
+ */
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -65,6 +79,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private final SeckillVoucherProducer seckillVoucherProducer;
     private final UserInfoService userInfoService;
     private final SeckillVoucherOperate seckillVoucherOperate;
+    private final VoucherOrderRouterMapper voucherOrderRouterMapper;
+    private final VoucherReconcileLogService voucherReconcileLogService;
+    private final VoucherMapper voucherMapper;
+    private final RedisVoucherData redisVoucherData;
 
 
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
@@ -136,6 +154,218 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return false;
         }
         return issueToCandidate(voucherId, candidateUserIdStr, seckillVoucherFullVO);
+    }
+
+    @Override
+    public Long seckillVoucher(Long voucherId) {
+        return doSeckillVoucherPlus(voucherId);
+    }
+
+    private Long doSeckillVoucherPlus(Long voucherId) {
+        SeckillVoucherFullVO seckillVoucherFullVO = seckillVoucherService.queryByVoucherId(voucherId);
+        seckillVoucherService.loadVoucherStock(voucherId);
+        Long userId = UserHolder.getUser().getId();
+        verifyUserLevel(seckillVoucherFullVO,userId);
+        long orderId = snowflakeIdGenerator.nextId();
+        long traceId = snowflakeIdGenerator.nextId();
+        List<String> keys = ListUtil.of(
+                RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_STOCK_TAG_KEY, voucherId),
+                RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_USER_TAG_KEY, voucherId),
+                RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_TRACE_LOG_TAG_KEY, voucherId)
+        );
+        String[] args = new String[9];
+        args[0] = voucherId.toString();
+        args[1] = userId.toString();
+        args[2] = String.valueOf(LocalDateTimeUtil.toEpochMilli(seckillVoucherFullVO.getBeginTime()));
+        args[3] = String.valueOf(LocalDateTimeUtil.toEpochMilli(seckillVoucherFullVO.getEndTime()));
+        args[4] = String.valueOf(seckillVoucherFullVO.getStatus());
+        args[5] = String.valueOf(orderId);
+        args[6] = String.valueOf(traceId);
+        args[7] = String.valueOf(LogType.DEDUCT.getCode());
+        long secondsUntilEnd = Duration.between(LocalDateTimeUtil.now(), seckillVoucherFullVO.getEndTime()).getSeconds();
+        long ttlSeconds = Math.max(1L, secondsUntilEnd + Duration.ofDays(1).getSeconds());
+        args[8] = String.valueOf(ttlSeconds);
+        SeckillVoucherDomain seckillVoucherDomain = seckillVoucherOperate.execute(
+                keys,
+                args
+        );
+        if (!seckillVoucherDomain.getCode().equals(BaseCode.SUCCESS.getCode())) {
+            throw new qhdpFrameException(Objects.requireNonNull(BaseCode.getRc(seckillVoucherDomain.getCode())));
+        }
+        SeckillVoucherMessage seckillVoucherMessage = new SeckillVoucherMessage(
+                userId,
+                voucherId,
+                orderId,
+                traceId,
+                seckillVoucherDomain.getBeforeQty(),
+                seckillVoucherDomain.getDeductQty(),
+                seckillVoucherDomain.getAfterQty(),
+                Boolean.FALSE
+        );
+        seckillVoucherProducer.sendPayload(
+                SpringUtil.getPrefixDistinctionName() + "-" + SECKILL_VOUCHER_TOPIC,
+                seckillVoucherMessage);
+        return orderId;
+    }
+
+    @Override
+    public Long getSeckillVoucherOrder(GetVoucherOrderDTO getVoucherOrderDTO) {
+        VoucherOrder voucherOrder =
+                redisUtils.get(RedisKeyBuild.createRedisKey(
+                                RedisKeyManage.DB_SECKILL_ORDER_KEY,
+                                getVoucherOrderDTO.getOrderId()),
+                        VoucherOrder.class);
+        if (Objects.nonNull(voucherOrder)) {
+            return voucherOrder.getId();
+        }
+        VoucherOrderRouter voucherOrderRouter =
+                voucherOrderRouterMapper.selectOne(
+                Wrappers.lambdaQuery(VoucherOrderRouter.class)
+                        .eq(VoucherOrderRouter::getOrderId, getVoucherOrderDTO.getOrderId()));
+        if (Objects.nonNull(voucherOrderRouter)) {
+            return voucherOrderRouter.getOrderId();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getSeckillVoucherOrderIdByVoucherId(GetVoucherOrderByVoucherIdDTO getVoucherOrderByVoucherIdDTO) {
+        VoucherOrder voucherOrder = lambdaQuery()
+                .eq(VoucherOrder::getUserId, UserHolder.getUser().getId())
+                .eq(VoucherOrder::getVoucherId, getVoucherOrderByVoucherIdDTO.getVoucherId())
+                .eq(VoucherOrder::getStatus, OrderStatus.NORMAL.getCode())
+                .one();
+        if (Objects.nonNull(voucherOrder)) {
+            return voucherOrder.getId();
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean cancel(CancelVoucherOrderDTO cancelVoucherOrderDTO) {
+        VoucherOrder voucherOrder = lambdaQuery()
+                .eq(VoucherOrder::getUserId, UserHolder.getUser().getId())
+                .eq(VoucherOrder::getVoucherId, cancelVoucherOrderDTO.getVoucherId())
+                .eq(VoucherOrder::getStatus, OrderStatus.NORMAL.getCode())
+                .one();
+        if (Objects.isNull(voucherOrder)) {
+            throw new qhdpFrameException(BaseCode.SECKILL_VOUCHER_ORDER_NOT_EXIST);
+        }
+        SeckillVoucher seckillVoucher = seckillVoucherService.lambdaQuery()
+                .eq(SeckillVoucher::getVoucherId, cancelVoucherOrderDTO.getVoucherId())
+                .one();
+        if (Objects.isNull(seckillVoucher)) {
+            throw new qhdpFrameException(BaseCode.SECKILL_VOUCHER_NOT_EXIST);
+        }
+        boolean updateResult = lambdaUpdate().set(VoucherOrder::getStatus, OrderStatus.CANCEL.getCode())
+                .set(VoucherOrder::getUpdateTime, LocalDateTimeUtil.now())
+                .eq(VoucherOrder::getUserId, UserHolder.getUser().getId())
+                .eq(VoucherOrder::getVoucherId, cancelVoucherOrderDTO.getVoucherId())
+                .update();
+        long traceId = snowflakeIdGenerator.nextId();
+        VoucherReconcileLogDTO voucherReconcileLogDTO = new VoucherReconcileLogDTO();
+        voucherReconcileLogDTO.setOrderId(voucherOrder.getId());
+        voucherReconcileLogDTO.setUserId(voucherOrder.getUserId());
+        voucherReconcileLogDTO.setVoucherId(voucherOrder.getVoucherId());
+        voucherReconcileLogDTO.setDetail("cancel voucher order ");
+        voucherReconcileLogDTO.setBeforeQty(seckillVoucher.getStock());
+        voucherReconcileLogDTO.setChangeQty(1);
+        voucherReconcileLogDTO.setAfterQty(seckillVoucher.getStock() + 1);
+        voucherReconcileLogDTO.setTraceId(traceId);
+        voucherReconcileLogDTO.setLogType(LogType.RESTORE.getCode());
+        voucherReconcileLogDTO.setBusinessType( BusinessType.CANCEL.getCode());
+        boolean saveReconcileLogResult = voucherReconcileLogService.saveReconcileLog(voucherReconcileLogDTO);
+
+        boolean rollbackStockResult = seckillVoucherService.rollbackStock(cancelVoucherOrderDTO.getVoucherId());
+
+        Boolean result = updateResult && saveReconcileLogResult && rollbackStockResult;
+        if (result) {
+            redisVoucherData.rollbackRedisVoucherData(
+                    SeckillVoucherOrderOperate.YES,
+                    traceId,
+                    voucherOrder.getVoucherId(),
+                    voucherOrder.getUserId(),
+                    voucherOrder.getId(),
+                    seckillVoucher.getStock(),
+                    1,
+                    seckillVoucher.getStock() + 1
+            );
+            redisUtils.hDelete(RedisKeyBuild.createRedisKey(RedisKeyManage.SECKILL_SUBSCRIBE_STATUS_TAG_KEY,
+                            cancelVoucherOrderDTO.getVoucherId()),
+                    String.valueOf(voucherOrder.getUserId()));
+            Voucher voucher = voucherMapper.selectById(voucherOrder.getVoucherId());
+            if (Objects.nonNull(voucher)) {
+                String day = LocalDateTime.ofInstant(voucherOrder.getCreateTime().toInstant(), ZoneId.systemDefault())
+                        .format(DateTimeFormatter.BASIC_ISO_DATE);
+                String dailyKey = RedisKeyBuild.createRedisKey(
+                        RedisKeyManage.SECKILL_SHOP_TOP_BUYERS_DAILY_TAG_KEY,
+                        voucher.getShopId(),
+                        day
+                );
+                redisUtils.zIncrementScore(dailyKey, String.valueOf(voucherOrder.getUserId()), -1.0);
+            }
+
+            try {
+                autoIssueVoucherToEarliestSubscriber(
+                        voucherOrder.getVoucherId(),
+                        voucherOrder.getUserId()
+                );
+            } catch (Exception e) {
+                log.warn("自动发券失败，voucherId={}, err=\n{}", voucherOrder.getVoucherId(), e.getMessage());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    @RepeatExecuteLimit(name = SECKILL_VOUCHER_ORDER,keys = {"#message.uuid"})
+    @Transactional(rollbackFor = Exception.class)
+    public boolean createVoucherOrderPlus(MessageExtend<SeckillVoucherMessage> message) {
+        SeckillVoucherMessage messageBody = message.getMessageBody();
+        Long userId = messageBody.getUserId();
+        VoucherOrder normalVoucherOrder = lambdaQuery()
+                .eq(VoucherOrder::getVoucherId, messageBody.getVoucherId())
+                .eq(VoucherOrder::getUserId, userId)
+                .eq(VoucherOrder::getStatus,OrderStatus.NORMAL.getCode())
+                .one();
+        if (Objects.nonNull(normalVoucherOrder)) {
+            log.warn("已存在此订单，voucherId：{},userId：{}", normalVoucherOrder.getVoucherId(), userId);
+            throw new qhdpFrameException(BaseCode.VOUCHER_ORDER_EXIST);
+        }
+        boolean success = seckillVoucherService.update()
+                .setSql("stock = stock - 1")
+                .eq("voucher_id", messageBody.getVoucherId())
+                .gt("stock", 0)
+                .update();
+        if (!success) {
+            throw new qhdpFrameException("优惠券库存不足！优惠券id:" + messageBody.getVoucherId());
+        }
+        VoucherOrder voucherOrder = new VoucherOrder();
+        voucherOrder.setId(messageBody.getOrderId());
+        voucherOrder.setUserId(messageBody.getUserId());
+        voucherOrder.setVoucherId(messageBody.getVoucherId());
+        save(voucherOrder);
+        VoucherOrderRouter voucherOrderRouter = new VoucherOrderRouter();
+        voucherOrderRouter.setId(snowflakeIdGenerator.nextId());
+        voucherOrderRouter.setOrderId(voucherOrder.getId());
+        voucherOrderRouter.setUserId(userId);
+        voucherOrderRouter.setVoucherId(voucherOrder.getVoucherId());
+        voucherOrderRouterMapper.insert(voucherOrderRouter);
+        redisUtils.set(RedisKeyBuild.createRedisKey(
+                        RedisKeyManage.DB_SECKILL_ORDER_KEY,messageBody.getOrderId()),
+                voucherOrder,
+                60L,
+                TimeUnit.SECONDS
+        );
+        voucherReconcileLogService.saveReconcileLog(
+                LogType.DEDUCT.getCode(),
+                BusinessType.SUCCESS.getCode(),
+                "order created",
+                message
+        );
+        return true;
+
     }
 
     private String findEarliestCandidate(final Long voucherId, final Long excludeUserId) {

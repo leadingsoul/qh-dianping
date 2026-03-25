@@ -7,7 +7,7 @@ import com.qhdp.factory.ServiceLockFactory;
 import com.qhdp.handler.handlerInterface.LockInfoHandle;
 import com.qhdp.servicelocker.LockType;
 import com.qhdp.servicelocker.ServiceLocker;
-import com.qhdp.servicelocker.annotation.ServiceLock;
+import com.qhdp.annotation.ServiceLock;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;

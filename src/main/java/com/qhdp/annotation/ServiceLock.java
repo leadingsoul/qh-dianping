@@ -1,4 +1,4 @@
-package com.qhdp.servicelocker.annotation;
+package com.qhdp.annotation;
 
 
 import com.qhdp.servicelocker.LockType;

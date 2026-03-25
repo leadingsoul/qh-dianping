@@ -10,7 +10,7 @@ import com.qhdp.mapper.VoucherMapper;
 import com.qhdp.service.SeckillVoucherService;
 import com.qhdp.mapper.SeckillVoucherMapper;
 import com.qhdp.servicelocker.LockType;
-import com.qhdp.servicelocker.annotation.ServiceLock;
+import com.qhdp.annotation.ServiceLock;
 import com.qhdp.utils.RedisKeyBuild;
 import com.qhdp.utils.RedisUtils;
 import com.qhdp.utils.SeckillVoucherCaffeineUtils;

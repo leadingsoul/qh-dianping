@@ -9,10 +9,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.util.ParameterizedTypeImpl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.geo.*;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
+@Slf4j
 @Component
 public class RedisUtils {
 
@@ -52,6 +55,12 @@ public class RedisUtils {
     // 通用泛型方法，支持任意返回类型的 RedisScript
     public <T> T execute(DefaultRedisScript<T> script, List<String> keys, String[] args) {
         return redisTemplate.execute(script, keys, (Object) args);
+    }
+    public <T> T execute(DefaultRedisScript<T> script, List<String> keys, String args) {
+        return redisTemplate.execute(script, keys, args);
+    }
+    public <T> T execute(RedisScript<T> script, List<String> keys, Object... args) {
+        return redisTemplate.execute(script, keys, args);
     }
 
     public Long getExpire(String key, TimeUnit timeUnit) {
@@ -125,6 +134,24 @@ public class RedisUtils {
         }
         // JSON 反序列化（如果你的 Redis 存的是 JSON）
         return JSONUtil.toBean(JSONUtil.toJsonStr(obj), clazz);
+    }
+
+    /**
+     * 根据违规键值增加相应的计数值
+     * @param violationKey 违规行为的键值，用于标识具体的违规类型
+     * @param l 需要增加的计数值
+     * @return 返回增加后的计数值
+     */
+    public long increment(String violationKey, long l) {
+        checkKey(violationKey);
+        try {
+            Long count = redisTemplate.opsForValue().increment(violationKey, l);
+            return count == null ? 0 : count;
+        } catch (Exception e) {
+            // Redis 异常时打印日志，返回 0 不影响业务流程
+            log.error("Redis 自增操作异常，key:{}", violationKey, e);
+            return 0;
+        }
     }
 
     /**
@@ -223,6 +250,11 @@ public class RedisUtils {
         return redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
     }
 
+    public Boolean expire(String key, long timeout , TimeUnit timeUnit) {
+        checkKey(key);
+        return redisTemplate.expire(key, timeout, timeUnit);
+    }
+
     /**
      * 判断key是否存在
      * @param key 缓存键
@@ -305,6 +337,16 @@ public class RedisUtils {
     public Map<Object, Object> hGetAll(String key) {
         checkKey(key);
         return redisTemplate.opsForHash().entries(key);
+    }
+
+    public <T> Map<String, T> hGetAll(String key,Class<T> clazz) {
+        checkKey(key);
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
+        Map<String,T> map = new HashMap<>(64);
+        entries.forEach((k,v) -> {
+            map.put(String.valueOf(k),getComplex(v, clazz));
+        });
+        return map;
     }
 
     /**

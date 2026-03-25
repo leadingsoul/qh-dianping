@@ -25,7 +25,7 @@ import com.qhdp.service.VoucherOrderService;
 import com.qhdp.service.VoucherService;
 import com.qhdp.mapper.VoucherMapper;
 import com.qhdp.servicelocker.LockType;
-import com.qhdp.servicelocker.annotation.ServiceLock;
+import com.qhdp.annotation.ServiceLock;
 import com.qhdp.toolkit.SnowflakeIdGenerator;
 import com.qhdp.utils.*;
 import com.qhdp.vo.GetSubscribeStatusVO;
