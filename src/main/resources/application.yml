@@ -8,14 +8,6 @@ spring:
     url: ${leading.datasource.url}
     username: ${leading.datasource.username}
     password: ${leading.datasource.password}
-    hikari:
-      minimum-idle: 10
-      maximum-pool-size: 12
-      connection-timeout: 60000
-      connection-test-query: SELECT 1
-      idle-timeout: 500000
-      max-lifetime: 540000
-      leak-detection-threshold: 0
 
   data:
     redis:

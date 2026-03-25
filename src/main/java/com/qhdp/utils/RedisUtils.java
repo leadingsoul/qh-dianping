@@ -1,6 +1,5 @@
 package com.qhdp.utils;
 
-import cn.hutool.cache.CacheUtil;
 import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -52,7 +51,7 @@ public class RedisUtils {
      */
     // 通用泛型方法，支持任意返回类型的 RedisScript
     public <T> T execute(DefaultRedisScript<T> script, List<String> keys, String[] args) {
-        return redisTemplate.execute(script, keys, args);
+        return redisTemplate.execute(script, keys, (Object) args);
     }
 
     public Long getExpire(String key, TimeUnit timeUnit) {
@@ -427,6 +426,19 @@ public class RedisUtils {
         checkKey(key);
         checkKey(otherKey);
         return redisTemplate.opsForSet().intersect(key, otherKey);
+    }
+
+    public <T> Set<T> sIntersect(String key, String otherKey, Class<T> clazz) {
+        checkKey(key);
+        checkKey(otherKey);
+        Set<Object> set = redisTemplate.opsForSet().intersect(key, otherKey);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return set.stream()
+                .filter(Objects::nonNull) // 过滤null元素
+                .map(clazz::cast) // 安全类型转换
+                .collect(Collectors.toSet());
     }
 
     /**
