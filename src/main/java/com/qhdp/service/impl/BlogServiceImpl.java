@@ -3,6 +3,7 @@ package com.qhdp.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,6 +11,7 @@ import com.qhdp.dto.ScrollResult;
 import com.qhdp.dto.UserDTO;
 import com.qhdp.entity.Blog;
 import com.qhdp.entity.User;
+import com.qhdp.mapper.UserMapper;
 import com.qhdp.service.BlogService;
 import com.qhdp.mapper.BlogMapper;
 import com.qhdp.service.UserService;
@@ -19,6 +21,7 @@ import com.qhdp.utils.UserHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,7 +40,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     implements BlogService{
 
     private final BlogMapper blogMapper;
-    private final UserService userService;
+    private final UserMapper userMapper;
     private final RedisUtils redisUtils;
 
     @Override
@@ -60,6 +63,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     }
 
     @Override
+    @Transactional
     public List<Blog> queryMyBlog(Integer current) {
         // 1. 获取登录用户
         UserDTO user = UserHolder.getUser();
@@ -75,6 +79,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     }
 
     @Override
+    @Transactional
     public List<Blog> queryHotBlog(Integer current) {
         // 1. 构建分页对象
         Page<Blog> page = new Page<>(current, SystemConstants.MAX_PAGE_SIZE);
@@ -86,7 +91,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         // 4. 为博客填充作者信息（昵称、头像）
         List<Blog> records = page.getRecords();
         records.forEach(blog -> {
-            User user = userService.getById(blog.getUserId());
+            User user = userMapper.selectById(blog.getUserId());
             if (user != null) {
                 blog.setName(user.getNickName());
                 blog.setIcon(user.getIcon());
@@ -122,9 +127,11 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         String idStr = StrUtil.join(",", ids);
         // 3.根据用户id查询用户 WHERE id IN ( 5 , 1 ) ORDER BY FIELD(id, 5, 1)
         // 4.返回
-        return userService.query()
-                .in("id", ids).last("ORDER BY FIELD(id," + idStr + ")").list()
-                .stream()
+        return userMapper.selectList(
+                        new QueryWrapper<User>()
+                                .in("id", ids)
+                                .last("ORDER BY FIELD(id," + idStr + ")")
+                ).stream()
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
     }
@@ -176,7 +183,10 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     }
     private void queryBlogUser(Blog blog) {
         Long userId = blog.getUserId();
-        User user = userService.getById(userId);
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在！");
+        }
         blog.setName(user.getNickName());
         blog.setIcon(user.getIcon());
     }
