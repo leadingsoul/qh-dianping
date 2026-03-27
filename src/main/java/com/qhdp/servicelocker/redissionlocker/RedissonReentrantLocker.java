@@ -65,12 +65,16 @@ public class RedissonReentrantLocker implements ServiceLocker {
     @Override
     public void unlock(String lockKey) {
         RLock lock = redissonClient.getLock(lockKey);
-        lock.unlock();
+        if (lock.isLocked() && lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
     }
 
     @Override
     public void unlock(RLock lock) {
-        lock.unlock();
+        if (lock.isLocked() && lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
     }
 
 }
