@@ -13,8 +13,8 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @description: 雪花算法
- * @author: phoenix
+ * &#064;description:  雪花算法
+ * &#064;author:  phoenix
  **/
 @Slf4j
 public class SnowflakeIdGenerator {

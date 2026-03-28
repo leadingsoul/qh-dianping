@@ -1,6 +1,7 @@
 package com.qhdp.toolkit;
 
 import com.alibaba.fastjson.JSON;
+import com.qhdp.constant.IdGeneratorConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -11,9 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @program: 黑马点评-plus升级版实战项目。添加 阿星不是程序员 微信，添加时备注 点评 来获取项目的完整资料 
- * @description: workId和dataCenterId
- * @author: 阿星不是程序员
+ * &#064;description:  workId和dataCenterId
+ * &#064;author:  phoenix
  **/
 @Slf4j
 public class WorkAndDataCenterIdHandler {

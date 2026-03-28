@@ -1,7 +1,8 @@
-package com.qhdp.handler.handlerInterface;
+package com.qhdp.handler;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.qhdp.handler.handlerInterface.LockInfoHandle;
 import com.qhdp.servicelocker.parser.ExtParameterNameDiscoverer;
 import com.qhdp.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ import java.util.List;
 
 
 /**
- * @description: 锁
+ * @description: 业务去重键生成
  * @author: phoenix
  **/
 @Slf4j
@@ -36,7 +37,10 @@ public abstract class AbstractLockInfoHandle implements LockInfoHandle {
     
     @Override
     public String getLockName(JoinPoint joinPoint,String name,String[] keys){
-        return SpringUtil.getPrefixDistinctionName() + "-" + getLockPrefixName() + ":" + name + getRelKey(joinPoint, keys);
+        return SpringUtil.getPrefixDistinctionName()
+                + "-" + getLockPrefixName()
+                + ":" + name
+                + getRelKey(joinPoint, keys);
     }
     
     @Override
@@ -47,8 +51,10 @@ public abstract class AbstractLockInfoHandle implements LockInfoHandle {
                 definitionKeyList.add(key);
             }
         }
-        return SpringUtil.getPrefixDistinctionName() + "-" + 
-                LOCK_DISTRIBUTE_ID_NAME_PREFIX + ":" + name + ":" + String.join(":", definitionKeyList);
+        return SpringUtil.getPrefixDistinctionName()
+                + "-" + LOCK_DISTRIBUTE_ID_NAME_PREFIX
+                + ":" + name
+                + ":" + String.join(":", definitionKeyList);
     }
     
     private String getRelKey(JoinPoint joinPoint, String[] keys){

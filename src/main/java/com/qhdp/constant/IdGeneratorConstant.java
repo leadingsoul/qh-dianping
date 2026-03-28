@@ -1,4 +1,4 @@
-package com.qhdp.toolkit;
+package com.qhdp.constant;
 
 /**
  * @description: 雪花算法相关常量

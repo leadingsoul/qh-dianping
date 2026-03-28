@@ -1,7 +1,7 @@
 package com.qhdp.servicelocker.info;
 
 
-import com.qhdp.handler.handlerInterface.AbstractLockInfoHandle;
+import com.qhdp.handler.AbstractLockInfoHandle;
 
 /**
  * @description: 锁信息
