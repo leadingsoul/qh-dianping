@@ -12,7 +12,7 @@ local logType = ARGV[8]
 local ttlSeconds = tonumber(ARGV[9])
 local timeArr = redis.call('TIME')
 local nowMillis = tonumber(timeArr[1]) * 1000 + math.floor(tonumber(timeArr[2]) / 1000)
-
+--
 if nowMillis < beginTime then
     return string.format('{"%s": %d}', 'code', 10002)
 end

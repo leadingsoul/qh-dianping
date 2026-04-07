@@ -11,8 +11,8 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * @description: 参数异常
- * @author: phoenix
+ * &#064;description:  参数异常
+ * &#064;author: phoenix
  **/
 
 @EqualsAndHashCode(callSuper = true)

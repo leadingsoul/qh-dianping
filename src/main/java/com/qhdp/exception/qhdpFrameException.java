@@ -6,8 +6,8 @@ import lombok.EqualsAndHashCode;
 import com.qhdp.enums.BaseCode;
 
 /**
- * @description: 业务异常
- * @author: phoenix
+ * &#064;description:  业务异常
+ * &#064;author: phoenix
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data
